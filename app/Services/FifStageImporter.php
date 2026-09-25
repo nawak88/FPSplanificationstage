@@ -31,6 +31,14 @@ class FifStageImporter
         };
 
         $payload = $this->withoutNullValues($parsed['payload']);
+
+        foreach (
+            $parsed['nullable_fields_to_sync'] ?? []
+            as $field
+        ) {
+            $payload[$field] =
+                $parsed['payload'][$field] ?? null;
+        }
         $title = $parsed['title'];
         $explicitShortLabel = $parsed['explicit_short_label'];
         $prerequis = $parsed['prerequis'];
@@ -153,40 +161,8 @@ class FifStageImporter
 
     private function detectGeneration(Spreadsheet $spreadsheet): string
     {
-        $sheetNames = [];
-
-        foreach (
-            $spreadsheet->getWorksheetIterator()
-            as $sheet
-        ) {
-            $sheetNames[] =
-                $this->normalize(
-                    $sheet->getTitle()
-                );
-        }
-
-        foreach ($sheetNames as $sheetName) {
-            if (str_contains($sheetName, 'modele fif')) {
-                return 'nouvelle';
-            }
-        }
-
-        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-            $haystack = $this->sheetText($sheet);
-
-            if (
-                str_contains($haystack, 'modules developpes')
-                || str_contains(
-                    $haystack,
-                    'si d enregistrement de la qualification'
-                )
-                || str_contains(
-                    $haystack,
-                    'typologie de la formation'
-                )
-            ) {
-                return 'nouvelle';
-            }
+        if ($this->findNewGenerationSheet($spreadsheet)) {
+            return 'nouvelle';
         }
 
         foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
@@ -215,11 +191,9 @@ class FifStageImporter
         Spreadsheet $spreadsheet,
         string $path
     ): array {
-        $sheet = $spreadsheet->getSheetByName('Modèle FIF')
-            ?? $this->findSheetContaining(
-                $spreadsheet,
-                'modules developpes'
-            );
+        $sheet = $this->findNewGenerationSheet(
+            $spreadsheet
+        );
 
         if (! $sheet) {
             throw new RuntimeException(
@@ -230,72 +204,159 @@ class FifStageImporter
         $validationSheet =
             $spreadsheet->getSheetByName('Fiche validation FIF');
 
-        $title = $this->firstNonPlaceholder([
-            $this->text($sheet, 'C2'),
-            $validationSheet
-                ? $this->text($validationSheet, 'B3')
-                : null,
-        ], [
-            'Intitulé de la formation',
-        ]);
+        $isIdentityTrainingSheet =
+            $this->isIdentityTrainingSheet($sheet);
 
-        $shortLabel = $this->firstNonPlaceholder([
-            $this->text($sheet, 'C4'),
-            $validationSheet
-                ? $this->text($validationSheet, 'C4')
-                : null,
-            $this->text($sheet, 'C3'),
-        ], [
-            'Libellé court',
-            'Libellé court :',
-        ]);
+        if ($isIdentityTrainingSheet) {
+            $title = $this->firstNonPlaceholder([
+                $this->text($sheet, 'C3'),
+            ], [
+                'Intitulé de la formation',
+            ]);
 
-        $longLabel = $this->firstNonPlaceholder([
-            $this->text($sheet, 'C6'),
-            $validationSheet
-                ? $this->text($validationSheet, 'C5')
-                : null,
-            $this->text($sheet, 'C5'),
-        ], [
-            'Libellé long',
-            'Libellé long :',
-        ]);
+            $shortLabel = $title;
+            $longLabel = $title;
 
-        $service = $this->firstNonPlaceholder([
-            $this->text($sheet, 'F3'),
-            $validationSheet
-                ? $this->text($validationSheet, 'D4')
-                : null,
-            $this->text($sheet, 'F2'),
-        ], [
-            'SERVICE EMETTEUR',
-            'Service Emetteur',
-        ]);
+            $service = $this->firstNonPlaceholder([
+                $this->text($sheet, 'F3'),
+            ], [
+                'Service responsable',
+            ]);
 
-        $typologie = $this->firstNonPlaceholder([
-            $this->text($sheet, 'F5'),
-            $this->text($sheet, 'F4'),
-        ], [
-            'Typologie de la formation',
-        ]);
+            $typologie = null;
+            $siQualification = $this->firstNonPlaceholder([
+                $this->text($sheet, 'F5'),
+            ], [
+                "SI d'enregistrement de la qualification",
+            ]);
 
-        $siQualification = $this->firstNonPlaceholder([
-            $this->text($sheet, 'F7'),
-            $this->text($sheet, 'F6'),
-        ], [
-            "SI d'enregistrement de la qualification",
-        ]);
+            $prerequisText = $this->firstNonPlaceholder([
+                $this->text($sheet, 'A12'),
+            ], [
+                '/',
+                'PRE-REQUIS',
+            ]);
 
-        $prerequisText = $this->firstNonPlaceholder([
-            $this->text($sheet, 'A14'),
-        ], [
-            '/',
-            'PRE-REQUIS',
-        ]);
+            $moduleStartRow = 18;
+            $moduleEndRow = 26;
+            $echelleGrades = $this->text($sheet, 'C8');
+            $niveauBrevet = $this->text($sheet, 'C9');
+            $dureeJours = $this->number($sheet, 'G8');
+            $capaciteMin = $this->minimumInteger(
+                $sheet,
+                'G9'
+            );
+            $capaciteMax = $this->maximumInteger(
+                $sheet,
+                'G9'
+            );
+            $lieuxFormation = $this->text($sheet, 'G10');
+            $fonctionsVisees = $this->text($sheet, 'A14');
+            $objectifFormation = $this->text($sheet, 'A16');
+            $evaluationDiagnostique =
+                $this->text($sheet, 'C28');
+            $evaluationFormative =
+                $this->text($sheet, 'C29');
+            $evaluationCertificative =
+                $this->text($sheet, 'C30');
+            $pedagogieGroupes = $this->text($sheet, 'D33');
+            $pedagogieVisite = $this->text($sheet, 'D34');
+            $pedagogieVideo = $this->text($sheet, 'D37');
+            $pedagogieTableauInteractif =
+                $this->text($sheet, 'D38');
+            $pedagogieAutre =
+                $this->otherPedagogy($sheet);
+        } else {
+            $title = $this->firstNonPlaceholder([
+                $this->text($sheet, 'C2'),
+                $validationSheet
+                    ? $this->text($validationSheet, 'B3')
+                    : null,
+            ], [
+                'Intitulé de la formation',
+            ]);
+
+            $shortLabel = $this->firstNonPlaceholder([
+                $this->text($sheet, 'C4'),
+                $validationSheet
+                    ? $this->text($validationSheet, 'C4')
+                    : null,
+                $this->text($sheet, 'C3'),
+            ], [
+                'Libellé court',
+                'Libellé court :',
+            ]);
+
+            $longLabel = $this->firstNonPlaceholder([
+                $this->text($sheet, 'C6'),
+                $validationSheet
+                    ? $this->text($validationSheet, 'C5')
+                    : null,
+                $this->text($sheet, 'C5'),
+            ], [
+                'Libellé long',
+                'Libellé long :',
+            ]);
+
+            $service = $this->firstNonPlaceholder([
+                $this->text($sheet, 'F3'),
+                $validationSheet
+                    ? $this->text($validationSheet, 'D4')
+                    : null,
+                $this->text($sheet, 'F2'),
+            ], [
+                'SERVICE EMETTEUR',
+                'Service Emetteur',
+            ]);
+
+            $typologie = $this->firstNonPlaceholder([
+                $this->text($sheet, 'F5'),
+                $this->text($sheet, 'F4'),
+            ], [
+                'Typologie de la formation',
+            ]);
+
+            $siQualification = $this->firstNonPlaceholder([
+                $this->text($sheet, 'F7'),
+                $this->text($sheet, 'F6'),
+            ], [
+                "SI d'enregistrement de la qualification",
+            ]);
+
+            $prerequisText = $this->firstNonPlaceholder([
+                $this->text($sheet, 'A14'),
+            ], [
+                '/',
+                'PRE-REQUIS',
+            ]);
+
+            $moduleStartRow = 20;
+            $moduleEndRow = 22;
+            $echelleGrades = $this->text($sheet, 'C10');
+            $niveauBrevet = $this->text($sheet, 'C11');
+            $dureeJours = $this->number($sheet, 'G10');
+            $capaciteMin = null;
+            $capaciteMax = $this->integer($sheet, 'G11');
+            $lieuxFormation = $this->text($sheet, 'G12');
+            $fonctionsVisees = $this->text($sheet, 'A16');
+            $objectifFormation = $this->text($sheet, 'A18');
+            $evaluationDiagnostique =
+                $this->text($sheet, 'C25');
+            $evaluationFormative =
+                $this->text($sheet, 'C26');
+            $evaluationCertificative =
+                $this->text($sheet, 'C27');
+            $pedagogieGroupes = $this->text($sheet, 'D30');
+            $pedagogieVisite = $this->text($sheet, 'D31');
+            $pedagogieVideo = $this->text($sheet, 'D32');
+            $pedagogieTableauInteractif =
+                $this->text($sheet, 'D33');
+            $pedagogieAutre = $this->text($sheet, 'D34');
+        }
 
         $modules = [];
 
-        for ($row = 20; $row <= 22; $row++) {
+        for ($row = $moduleStartRow; $row <= $moduleEndRow; $row++) {
             $module = $this->text(
                 $sheet,
                 'A' . $row
@@ -326,7 +387,7 @@ class FifStageImporter
             'modele_fif' => $this->sheetSnapshot(
                 $sheet,
                 1,
-                34,
+                40,
                 1,
                 8
             ),
@@ -352,36 +413,26 @@ class FifStageImporter
                 $siQualification,
             'libelle_court' => $shortLabel,
             'libelle_long' => $longLabel,
-            'echelle_grades' =>
-                $this->text($sheet, 'C10'),
-            'niveau_brevet' =>
-                $this->text($sheet, 'C11'),
-            'duree_jours' =>
-                $this->number($sheet, 'G10'),
-            'capacite_max' =>
-                $this->integer($sheet, 'G11'),
-            'lieux_formation' =>
-                $this->text($sheet, 'G12'),
-            'fonctions_visees' =>
-                $this->text($sheet, 'A16'),
-            'objectif_formation' =>
-                $this->text($sheet, 'A18'),
+            'echelle_grades' => $echelleGrades,
+            'niveau_brevet' => $niveauBrevet,
+            'duree_jours' => $dureeJours,
+            'capacite_min' => $capaciteMin,
+            'capacite_max' => $capaciteMax,
+            'lieux_formation' => $lieuxFormation,
+            'fonctions_visees' => $fonctionsVisees,
+            'objectif_formation' => $objectifFormation,
             'evaluation_diagnostique' =>
-                $this->text($sheet, 'C25'),
+                $evaluationDiagnostique,
             'evaluation_formative' =>
-                $this->text($sheet, 'C26'),
+                $evaluationFormative,
             'evaluation_certificative' =>
-                $this->text($sheet, 'C27'),
-            'pedagogie_groupes' =>
-                $this->text($sheet, 'D30'),
-            'pedagogie_visite' =>
-                $this->text($sheet, 'D31'),
-            'pedagogie_video' =>
-                $this->text($sheet, 'D32'),
+                $evaluationCertificative,
+            'pedagogie_groupes' => $pedagogieGroupes,
+            'pedagogie_visite' => $pedagogieVisite,
+            'pedagogie_video' => $pedagogieVideo,
             'pedagogie_tableau_interactif' =>
-                $this->text($sheet, 'D33'),
-            'pedagogie_autre' =>
-                $this->text($sheet, 'D34'),
+                $pedagogieTableauInteractif,
+            'pedagogie_autre' => $pedagogieAutre,
             'fif_validation' =>
                 $validation !== []
                     ? $validation
@@ -409,6 +460,20 @@ class FifStageImporter
                 $shortLabel,
                 $longLabel
             ),
+            'nullable_fields_to_sync' =>
+                $isIdentityTrainingSheet
+                    ? [
+                        'typologie',
+                        'evaluation_diagnostique',
+                        'evaluation_formative',
+                        'evaluation_certificative',
+                        'pedagogie_groupes',
+                        'pedagogie_visite',
+                        'pedagogie_video',
+                        'pedagogie_tableau_interactif',
+                        'pedagogie_autre',
+                    ]
+                    : [],
         ];
     }
 
@@ -846,6 +911,108 @@ class FifStageImporter
         return null;
     }
 
+    private function findNewGenerationSheet(
+        Spreadsheet $spreadsheet
+    ): ?Worksheet {
+        $exactSheet =
+            $spreadsheet->getSheetByName('Modèle FIF');
+
+        if ($exactSheet) {
+            return $exactSheet;
+        }
+
+        $markers = [
+            'modules developpes',
+            'si d enregistrement de la qualification',
+            'typologie de la formation',
+        ];
+
+        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+            $haystack = $this->sheetText($sheet);
+
+            foreach ($markers as $marker) {
+                if (str_contains($haystack, $marker)) {
+                    return $sheet;
+                }
+            }
+        }
+
+        return $this->findSheetWithTitleContaining(
+            $spreadsheet,
+            'modele fif'
+        );
+    }
+
+    private function isIdentityTrainingSheet(
+        Worksheet $sheet
+    ): bool {
+        $heading = $this->normalize(
+            $this->text($sheet, 'C1') ?? ''
+        );
+
+        $durationLabel = $this->normalize(
+            $this->text($sheet, 'E8') ?? ''
+        );
+
+        return str_contains(
+            $heading,
+            'fiche d identite de formation'
+        ) && str_contains(
+            $durationLabel,
+            'duree en j'
+        );
+    }
+
+    private function otherPedagogy(
+        Worksheet $sheet
+    ): ?string {
+        $items = [];
+
+        foreach ([35, 36, 39] as $row) {
+            $value = $this->text(
+                $sheet,
+                'D' . $row
+            );
+
+            if ($value === null) {
+                continue;
+            }
+
+            $label = $this->text(
+                $sheet,
+                'A' . $row
+            );
+
+            $items[] = $label !== null
+                ? $label . ' : ' . $value
+                : $value;
+        }
+
+        return $items === []
+            ? null
+            : implode("\n", $items);
+    }
+
+    private function findSheetWithTitleContaining(
+        Spreadsheet $spreadsheet,
+        string $needle
+    ): ?Worksheet {
+        $needle = $this->normalize($needle);
+
+        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+            if (
+                str_contains(
+                    $this->normalize($sheet->getTitle()),
+                    $needle
+                )
+            ) {
+                return $sheet;
+            }
+        }
+
+        return null;
+    }
+
     private function sheetText(
         Worksheet $sheet
     ): string {
@@ -994,6 +1161,58 @@ class FifStageImporter
         return $number === null
             ? null
             : (int) round($number);
+    }
+
+    private function maximumInteger(
+        Worksheet $sheet,
+        string $coordinate
+    ): ?int {
+        $value = $this->text(
+            $sheet,
+            $coordinate
+        );
+
+        if (
+            $value === null
+            || preg_match_all(
+                '/\d+/',
+                $value,
+                $matches
+            ) === 0
+        ) {
+            return null;
+        }
+
+        return max(array_map(
+            'intval',
+            $matches[0]
+        ));
+    }
+
+    private function minimumInteger(
+        Worksheet $sheet,
+        string $coordinate
+    ): ?int {
+        $value = $this->text(
+            $sheet,
+            $coordinate
+        );
+
+        if (
+            $value === null
+            || preg_match_all(
+                '/\d+/',
+                $value,
+                $matches
+            ) === 0
+        ) {
+            return null;
+        }
+
+        return min(array_map(
+            'intval',
+            $matches[0]
+        ));
     }
 
     private function normalize(string $value): string

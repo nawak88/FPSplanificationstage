@@ -20,6 +20,7 @@ use Modules\RH\Models\Brevet;
 use Modules\RH\Models\Grade;
 use Modules\RH\Models\Marin;
 use Modules\RH\Models\Specialite;
+use Modules\RH\Models\Unite;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -300,6 +301,288 @@ it(
                 'name="telephone"',
                 false
             );
+    }
+);
+
+it(
+    'préremplit la page inscription avec les informations de l utilisateur connecté',
+    function (): void {
+        $session =
+            creerSessionPourInscriptionMindef();
+
+        $compteMindef =
+            User::factory()
+                ->create([
+                    'sub' =>
+                        'mindef-' . Str::uuid(),
+
+                    'nom' =>
+                        'DURAND',
+
+                    'prenom' =>
+                        'Alice',
+
+                    'email' =>
+                        'alice.durand@example.test',
+                ]);
+
+        $grade =
+            Grade::factory()
+                ->create([
+                    'libelle_court' =>
+                        'PMTEST',
+
+                    'libelle_long' =>
+                        'Premier maître de test',
+                ]);
+
+        $specialite =
+            Specialite::factory()
+                ->create([
+                    'libelle_court' =>
+                        'NAVTEST',
+
+                    'libelle_long' =>
+                        'Navigation de test',
+                ]);
+
+        $brevet =
+            Brevet::factory()
+                ->create([
+                    'libelle_court' =>
+                        'BRSUP',
+
+                    'libelle_long' =>
+                        'Brevet supérieur de test',
+                ]);
+
+        $unite =
+            Unite::factory()
+                ->create([
+                    'libelle_court' =>
+                        'UNITEST',
+
+                    'libelle_long' =>
+                        'Unité longue de test',
+                ]);
+
+        Marin::factory()
+            ->create([
+                'user_id' =>
+                    $compteMindef->id,
+
+                'nom' =>
+                    'NOM FICHE RH',
+
+                'prenom' =>
+                    'Prénom fiche RH',
+
+                'email' =>
+                    'fiche.rh@example.test',
+
+                'matricule' =>
+                    'MAT-12345',
+
+                'nid' =>
+                    'NID-12345',
+
+                'grade_id' =>
+                    $grade->id,
+
+                'specialite_id' =>
+                    $specialite->id,
+
+                'brevet_id' =>
+                    $brevet->id,
+
+                'unite_id' =>
+                    $unite->id,
+            ]);
+
+        actingAs(
+            $compteMindef
+        );
+
+        $identity = app(
+            PublicInscriptionPageService::class
+        )->form(
+            $session,
+            $compteMindef
+        )['identity'];
+
+        expect($identity)
+            ->toMatchArray([
+                'nom' =>
+                    'DURAND',
+
+                'prenom' =>
+                    'Alice',
+
+                'email' =>
+                    $compteMindef->email,
+
+                'matricule' =>
+                    'MAT-12345',
+
+                'nid' =>
+                    'NID-12345',
+
+                'grade' =>
+                    $grade->libelle_court,
+
+                'specialite' =>
+                    $specialite->libelle_court,
+
+                'brevet' =>
+                    $brevet->libelle_court,
+
+                'unite' =>
+                    $unite->libelle_court,
+            ]);
+
+        $response = get(
+            PublicInscriptionPage::getUrl(
+                [
+                    'session' =>
+                        $session->id,
+                ],
+                panel:
+                    'fpsplanificationstage'
+            )
+        )
+            ->assertSuccessful()
+            ->assertSee(
+                'name="nom"',
+                false
+            );
+
+        $html =
+            $response->getContent();
+
+        $inputAttributes =
+            function (
+                string $name
+            ) use ($html): ?string {
+                preg_match(
+                    '~<input\\b[^>]*\\bname="'
+                    . preg_quote(
+                        $name,
+                        '~'
+                    )
+                    . '"[^>]*>~i',
+                    $html,
+                    $matches
+                );
+
+                return $matches[0]
+                    ?? null;
+            };
+
+        $selectedOptionAttributes =
+            function (
+                string $name,
+                string $value
+            ) use ($html): ?string {
+                preg_match(
+                    '~<select\\b[^>]*\\bname="'
+                    . preg_quote(
+                        $name,
+                        '~'
+                    )
+                    . '"[^>]*>(.*?)</select>~is',
+                    $html,
+                    $selectMatches
+                );
+
+                preg_match(
+                    '~<option\\b'
+                    . '(?=[^>]*\\bvalue="'
+                    . preg_quote(
+                        $value,
+                        '~'
+                    )
+                    . '")'
+                    . '(?=[^>]*\\bselected\\b)'
+                    . '[^>]*>~i',
+                    $selectMatches[1]
+                        ?? '',
+                    $optionMatches
+                );
+
+                return $optionMatches[0]
+                    ?? null;
+            };
+
+        expect(
+            $inputAttributes('nom')
+        )
+            ->toMatch(
+                '~value="DURAND"~'
+            )
+            ->toMatch('~readonly~')
+            ->and(
+                $inputAttributes('prenom')
+            )
+            ->toMatch(
+                '~value="Alice"~'
+            )
+            ->toMatch('~readonly~')
+            ->and(
+                $inputAttributes('email')
+            )
+            ->toMatch(
+                '~value="'
+                . preg_quote(
+                    $compteMindef->email,
+                    '~'
+                )
+                . '"~'
+            )
+            ->toMatch('~readonly~')
+            ->and(
+                $inputAttributes('matricule')
+            )
+            ->toMatch(
+                '~value="MAT-12345"~'
+            )
+            ->and(
+                $inputAttributes('nid')
+            )
+            ->toMatch(
+                '~value="NID-12345"~'
+            )
+            ->and(
+                $inputAttributes('unite')
+            )
+            ->toMatch(
+                '~value="'
+                . preg_quote(
+                    $unite->libelle_court,
+                    '~'
+                )
+                . '"~'
+            )
+            ->and(
+                $selectedOptionAttributes(
+                    'grade',
+                    $grade->libelle_court
+                )
+            )
+            ->not->toBeNull()
+            ->and(
+                $selectedOptionAttributes(
+                    'specialite',
+                    $specialite->libelle_court
+                )
+            )
+            ->not->toBeNull()
+            ->and(
+                $selectedOptionAttributes(
+                    'brevet',
+                    $brevet->libelle_court
+                )
+            )
+            ->not->toBeNull();
     }
 );
 

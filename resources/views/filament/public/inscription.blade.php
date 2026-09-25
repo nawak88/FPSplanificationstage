@@ -40,7 +40,7 @@
                                 type="{{ $type }}"
                                 name="{{ $name }}"
                                 value="{{ old($name, $identity[$name] ?? null) }}"
-                                @readonly(in_array($name, ['nom', 'prenom', 'email'], true))
+                                :readonly="in_array($name, ['nom', 'prenom', 'email'], true)"
                             />
                         </x-filament::input.wrapper>
                     </div>
