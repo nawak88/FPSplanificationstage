@@ -4,7 +4,6 @@ namespace Modules\FPSplanificationstage\Filament\Widgets;
 
 use Carbon\Carbon;
 use Filament\Widgets\Widget;
-use Modules\FPSplanificationstage\Filament\Pages\Planning;
 use Modules\FPSplanificationstage\Filament\Pages\Statistiques;
 use Modules\FPSplanificationstage\Filament\Resources\BesoinFormations\BesoinFormationResource;
 use Modules\FPSplanificationstage\Filament\Resources\Inscriptions\InscriptionResource;
@@ -430,7 +429,11 @@ class TableauBordSemaine extends Widget
 
             'urls' => [
                 'planning' =>
-                    Planning::getUrl(),
+                    SessionStageResource::getUrl(
+                        'planning',
+                        panel:
+                            'fpsplanificationstage'
+                    ),
 
                 'besoins' =>
                     BesoinFormationResource::getUrl(

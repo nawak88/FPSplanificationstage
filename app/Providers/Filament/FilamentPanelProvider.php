@@ -27,7 +27,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Modules\FPSplanificationstage\Filament\Pages\Dashboard;
-use Modules\FPSplanificationstage\Filament\Pages\Planning;
+use Modules\FPSplanificationstage\Filament\Pages\EspaceInstructeur;
 use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormations;
 use Modules\FPSplanificationstage\Filament\Pages\Statistiques;
 use Modules\FPSplanificationstage\Filament\Pages\ReservationsSalles;
@@ -90,7 +90,7 @@ class FilamentPanelProvider extends PanelProvider
             )
             ->pages([
                 Dashboard::class,
-                Planning::class,
+                EspaceInstructeur::class,
                 Statistiques::class,
                 \Modules\FPSplanificationstage\Filament\Pages\Admission::class,
                 PlanningFormations::class,

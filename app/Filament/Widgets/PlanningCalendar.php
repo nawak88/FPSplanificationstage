@@ -17,6 +17,8 @@ class PlanningCalendar extends CalendarWidget
 {
     protected bool $eventClickEnabled = true;
 
+    protected bool $hideCancelledByDefault = false;
+
     public ?string $stageFilter = '';
 
     public ?string $instructeurFilter = '';
@@ -66,6 +68,8 @@ class PlanningCalendar extends CalendarWidget
 
         if ($this->statutFilter !== '') {
             $query->where('statut', $this->statutFilter);
+        } elseif ($this->hideCancelledByDefault) {
+            $query->where('statut', '<>', 'annulee');
         }
 
         $searchTerm = trim((string) $this->searchTerm);

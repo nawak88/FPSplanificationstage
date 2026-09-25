@@ -5,8 +5,8 @@ use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\FPSplanificationstage\Filament\Pages\Admission;
 use Modules\FPSplanificationstage\Filament\Pages\Dashboard;
+use Modules\FPSplanificationstage\Filament\Pages\EspaceInstructeur;
 use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormations;
-use Modules\FPSplanificationstage\Filament\Pages\Planning;
 use Modules\FPSplanificationstage\Filament\Pages\ReservationsSalles;
 use Modules\FPSplanificationstage\Filament\Pages\Statistiques;
 use Modules\FPSplanificationstage\Filament\Resources\BesoinFormations\BesoinFormationResource;
@@ -14,6 +14,7 @@ use Modules\FPSplanificationstage\Filament\Resources\IndisponibiliteInstructeurs
 use Modules\FPSplanificationstage\Filament\Resources\Inscriptions\InscriptionResource;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\InstructeurResource;
 use Modules\FPSplanificationstage\Filament\Resources\Salles\SalleResource;
+use Modules\FPSplanificationstage\Filament\Resources\SessionStages\Pages\PlanningSessionStages;
 use Modules\FPSplanificationstage\Filament\Resources\SessionStages\SessionStageResource;
 use Modules\FPSplanificationstage\Filament\Resources\Stages\StageResource;
 use Modules\FPSplanificationstage\Filament\Resources\Stagiaires\StagiaireResource;
@@ -40,8 +41,9 @@ it('ne montre aux visiteurs que le planning des formations', function (): void {
     foreach (
         [
             Dashboard::class,
+            EspaceInstructeur::class,
             Statistiques::class,
-            Planning::class,
+            PlanningSessionStages::class,
             Admission::class,
             ReservationsSalles::class,
             BesoinFormationResource::class,
@@ -102,6 +104,14 @@ it('interdit aussi les accès directs aux pages de gestion', function (): void {
                 'fpsplanificationstage'
         )
     )->assertForbidden();
+
+    get(
+        SessionStageResource::getUrl(
+            'planning',
+            panel:
+                'fpsplanificationstage'
+        )
+    )->assertForbidden();
 });
 
 it('laisse les pages de gestion accessibles après authentification', function (): void {
@@ -114,7 +124,7 @@ it('laisse les pages de gestion accessibles après authentification', function (
         [
             Dashboard::class,
             Statistiques::class,
-            Planning::class,
+            PlanningSessionStages::class,
             Admission::class,
             ReservationsSalles::class,
         ]
