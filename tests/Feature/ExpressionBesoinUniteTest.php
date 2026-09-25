@@ -6,9 +6,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinNouveau;
-use Modules\FPSplanificationstage\Http\Controllers\PublicBesoinFormationController;
 use Modules\FPSplanificationstage\Models\BesoinFormation;
 use Modules\FPSplanificationstage\Models\Stage;
+use Modules\FPSplanificationstage\Services\PublicBesoinFormationPageService;
 use Modules\RH\Models\Marin;
 use Modules\RH\Models\Unite;
 
@@ -73,10 +73,11 @@ it(
 
         $data =
             app(
-                PublicBesoinFormationController::class
+                PublicBesoinFormationPageService::class
             )
-                ->create()
-                ->getData();
+                ->form(
+                    $compteMindef
+                );
 
         expect($data['demandeur'])
             ->toBe(
@@ -138,10 +139,11 @@ it(
 
         expect(
             app(
-                PublicBesoinFormationController::class
+                PublicBesoinFormationPageService::class
             )
-                ->create()
-                ->getData()['demandeur']
+                ->form(
+                    $compteMindef
+                )['demandeur']
         )->toBe(
             $unite->libelle_long
         );

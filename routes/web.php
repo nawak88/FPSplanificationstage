@@ -10,12 +10,9 @@ use Modules\FPSplanificationstage\Http\Middleware\RequireMindefConnectAuthentica
 | Actions du portail de formation
 |--------------------------------------------------------------------------
 |
-| Toutes les pages GET sont maintenant de vraies pages Filament du panel
-| fpsplanificationstage, sous :
-|
-| /apps/fpsplanificationstage/espace-stagiaire/planning-formations/...
-|
-| Il n'existe plus de second panel /apps/formations.
+| Les pages GET sont de vraies pages Filament du panel
+| fpsplanificationstage. Les actions HTTP utilisent des routes Laravel
+| nommées afin de rester indépendantes du préfixe configuré du panel.
 */
 
 Route::post(
@@ -54,6 +51,6 @@ Route::get(
     '/fpsplanificationstage/espace-stagiaire/planning-formations/inscriptions/{code}/pdf',
     [
         PublicInscriptionController::class,
-        'confirmation',
+        'pdf',
     ]
 )->name('fpsplanificationstage.public.inscription.pdf');

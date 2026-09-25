@@ -2,9 +2,9 @@
 
 namespace Modules\FPSplanificationstage\Filament\Public\Pages;
 
-use Modules\FPSplanificationstage\Http\Controllers\PublicInscriptionController;
 use Modules\FPSplanificationstage\Http\Middleware\RequireMindefConnectAuthentication;
 use Modules\FPSplanificationstage\Models\SessionStage;
+use Modules\FPSplanificationstage\Services\PublicInscriptionPageService;
 
 class Inscription extends PublicPage
 {
@@ -20,8 +20,11 @@ class Inscription extends PublicPage
     {
         $record = SessionStage::query()->findOrFail($session);
 
-        $view = app(PublicInscriptionController::class)->create($record);
-
-        $this->pageData = $view->getData();
+        $this->pageData = app(
+            PublicInscriptionPageService::class
+        )->form(
+            $record,
+            auth()->user()
+        );
     }
 }

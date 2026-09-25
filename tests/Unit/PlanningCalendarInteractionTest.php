@@ -2,6 +2,7 @@
 
 use Guava\Calendar\ValueObjects\EventClickInfo;
 use Illuminate\Database\Eloquent\Model;
+use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
 use Modules\FPSplanificationstage\Filament\Widgets\PlanningCalendar;
 
 uses(Tests\TestCase::class);
@@ -56,7 +57,10 @@ it('enables clicks and attaches the session model', function () {
             'CalendarEvent::make($session)'
         )
         ->toContain(
-            '/apps/fpsplanificationstage/espace-stagiaire/planning-formations/sessions/'
+            SessionDetail::class
+        )
+        ->toContain(
+            'SessionDetail::getUrl('
         )
         ->not->toContain(
             '->url('

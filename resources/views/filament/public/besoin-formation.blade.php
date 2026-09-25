@@ -1,7 +1,5 @@
 <x-filament-panels::page>
     @php
-        $planningUrl = '/apps/fpsplanificationstage/espace-stagiaire/planning-formations';
-
         $oldBesoins = old('besoins');
 
         if (! is_array($oldBesoins) || $oldBesoins === []) {

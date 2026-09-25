@@ -10,6 +10,7 @@ use Guava\Calendar\ValueObjects\EventClickInfo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
 use Modules\FPSplanificationstage\Models\SessionStage;
 
 class PlanningCalendar extends CalendarWidget
@@ -213,7 +214,14 @@ class PlanningCalendar extends CalendarWidget
         }
 
         $this->redirect(
-            ('/apps/fpsplanificationstage/espace-stagiaire/planning-formations/sessions/' . $event->getKey())
+            SessionDetail::getUrl(
+                [
+                    'session' =>
+                        $event->getKey(),
+                ],
+                panel:
+                    'fpsplanificationstage'
+            )
         );
     }
 

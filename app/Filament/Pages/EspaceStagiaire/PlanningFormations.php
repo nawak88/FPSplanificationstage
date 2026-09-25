@@ -10,6 +10,8 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinNouveau;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinSuiviRecherche;
 use Modules\FPSplanificationstage\Filament\Widgets\PlanningCalendar;
 
 class PlanningFormations extends Page
@@ -41,12 +43,22 @@ class PlanningFormations extends Page
             Action::make('exprimerBesoin')
                 ->label('Exprimer un besoin de stage')
                 ->icon('heroicon-o-plus-circle')
-                ->url('/apps/fpsplanificationstage/espace-stagiaire/planning-formations/besoins/nouveau')
+                ->url(
+                    BesoinNouveau::getUrl(
+                        panel:
+                            'fpsplanificationstage'
+                    )
+                )
                 ->color('success'),
             Action::make('suivreBesoin')
                 ->label('Suivre un besoin')
                 ->icon('heroicon-o-magnifying-glass')
-                ->url('/apps/fpsplanificationstage/espace-stagiaire/planning-formations/besoins/suivi')
+                ->url(
+                    BesoinSuiviRecherche::getUrl(
+                        panel:
+                            'fpsplanificationstage'
+                    )
+                )
                 ->color('gray'),
         ];
     }

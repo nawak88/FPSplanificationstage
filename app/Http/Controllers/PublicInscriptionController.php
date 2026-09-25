@@ -5,15 +5,19 @@ namespace Modules\FPSplanificationstage\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
+use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormations;
 use Modules\FPSplanificationstage\Models\Inscription;
 use Modules\FPSplanificationstage\Models\InscriptionPrerequis;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Services\CandidatureStageDejaEffectueNotifier;
+use Modules\FPSplanificationstage\Services\InscriptionPdfService;
+use Modules\FPSplanificationstage\Services\PublicInscriptionPageService;
 use Modules\FPSplanificationstage\Services\StagiaireResolver;
 use Modules\RH\Models\Brevet;
 use Modules\RH\Models\Grade;
@@ -22,64 +26,13 @@ use Modules\RH\Models\Specialite;
 
 class PublicInscriptionController extends Controller
 {
-    public function create(
-        SessionStage $session
-    ): View {
-        $this->ensureSessionIsRegistrable(
-            $session
-        );
-
-        $session->load([
-            'stage.prerequis' =>
-                fn ($query) =>
-                    $query
-                        ->where(
-                            'actif',
-                            true
-                        )
-                        ->orderBy(
-                            'ordre'
-                        ),
-
-            'salle',
-        ]);
-
-        return view(
-            'fpsplanificationstage::public.inscription',
-            [
-                'session' =>
-                    $session,
-
-                'identity' =>
-                    $this->identityFor(
-                        auth()->user()
-                    ),
-
-                'grades' =>
-                    Grade::query()
-                        ->orderBy('ordre')
-                        ->orderBy('libelle_long')
-                        ->get(),
-
-                'specialites' =>
-                    Specialite::query()
-                        ->orderBy('libelle_long')
-                        ->get(),
-
-                'brevets' =>
-                    Brevet::query()
-                        ->orderBy('ordre')
-                        ->orderBy('libelle_long')
-                        ->get(),
-            ]
-        );
-    }
-
     public function store(
         Request $request,
         SessionStage $session
     ): RedirectResponse {
-        $this->ensureSessionIsRegistrable(
+        app(
+            PublicInscriptionPageService::class
+        )->ensureSessionIsRegistrable(
             $session
         );
 
@@ -180,12 +133,6 @@ class PublicInscriptionController extends Controller
                 'email' => [
                     'required',
                     'email',
-                    'max:255',
-                ],
-
-                'telephone' => [
-                    'nullable',
-                    'string',
                     'max:255',
                 ],
 
@@ -372,10 +319,6 @@ class PublicInscriptionController extends Controller
                             'candidat_unite' =>
                                 $validated['unite'],
 
-                            'candidat_telephone' =>
-                                $validated['telephone']
-                                ?? null,
-
                             'statut' =>
                                 $statut,
 
@@ -449,22 +392,22 @@ class PublicInscriptionController extends Controller
          * empêche le téléchargement par simple devinette d'un code INS.
          */
         $pdfUrl =
-            \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            URL::temporarySignedRoute(
                 'fpsplanificationstage.public.inscription.pdf',
                 now()->addHour(),
                 [
                     'code' =>
                         $inscription
                             ->code_inscription,
-
-                    'pdf' =>
-                        1,
                 ],
                 false
             );
         $redirect =
             redirect()->to(
-                '/apps/fpsplanificationstage/espace-stagiaire/planning-formations'
+                PlanningFormations::getUrl(
+                    panel:
+                        'fpsplanificationstage'
+                )
             )
             ->with(
                 'inscription_success',
@@ -498,171 +441,57 @@ class PublicInscriptionController extends Controller
         return $redirect;
     }
 
-    public function confirmation(
+    public function pdf(
         Request $request,
         string $code
-    ) {
-        $inscription =
-            Inscription::query()
-                ->with([
-                    'sessionStage.stage',
-                ])
-                ->where(
-                    'code_inscription',
-                    $code
-                )
-                ->firstOrFail();
-
-                /*
-         * PDF_CANDIDATURE_RESPONSE_V1
-         */
+    ): Response {
         if (
-            $request->boolean(
-                'pdf'
+            ! URL::hasValidSignature(
+                $request,
+                false
             )
         ) {
-            if (
-                ! \Illuminate\Support\Facades\URL::hasValidSignature(
-                    $request,
-                    false
-                )
-            ) {
-                abort(403);
-            }
-
-            $pdf =
-                app(
-                    \Modules\FPSplanificationstage\Services\InscriptionPdfService::class
-                )
-                    ->render(
-                        $inscription
-                    );
-
-            $filename =
-                'candidature-stage-'
-                . $inscription
-                    ->code_inscription
-                . '.pdf';
-
-            return response(
-                $pdf,
-                200,
-                [
-                    'Content-Type' =>
-                        'application/pdf',
-
-                    'Content-Disposition' =>
-                        'attachment; filename="'
-                        . $filename
-                        . '"',
-
-                    'Cache-Control' =>
-                        'private, no-store, max-age=0',
-
-                    'X-Content-Type-Options' =>
-                        'nosniff',
-                ]
-            );
+            abort(403);
         }
-return view(
-            'fpsplanificationstage::public.inscription-confirmation',
+
+        $inscription =
+            app(
+                PublicInscriptionPageService::class
+            )->findByCode(
+                $code
+            );
+
+        $pdf =
+            app(
+                InscriptionPdfService::class
+            )->render(
+                $inscription
+            );
+
+        $filename =
+            'candidature-stage-'
+            . $inscription
+                ->code_inscription
+            . '.pdf';
+
+        return response(
+            $pdf,
+            200,
             [
-                'inscription' =>
-                    $inscription,
+                'Content-Type' =>
+                    'application/pdf',
+
+                'Content-Disposition' =>
+                    'attachment; filename="'
+                    . $filename
+                    . '"',
+
+                'Cache-Control' =>
+                    'private, no-store, max-age=0',
+
+                'X-Content-Type-Options' =>
+                    'nosniff',
             ]
         );
-    }
-
-    private function ensureSessionIsRegistrable(
-        SessionStage $session
-    ): void {
-        if (
-            in_array(
-                $session->statut,
-                [
-                    'annulee',
-                    'terminee',
-                ],
-                true
-            )
-        ) {
-            abort(404);
-        }
-    }
-
-    /**
-     * @return array<string, ?string>
-     */
-    private function identityFor(
-        User $user
-    ): array {
-        $marin =
-            Marin::fromUser(
-                $user
-            )
-            ?? app(
-                StagiaireResolver::class
-            )->find([
-                'nom' =>
-                    $user->nom,
-
-                'prenom' =>
-                    $user->prenom,
-
-                'email' =>
-                    $user->email,
-            ]);
-
-        $mindef =
-            $user
-                ->getMindefConnectInformations();
-
-        return [
-            'nom' =>
-                $user->nom,
-
-            'prenom' =>
-                $user->prenom,
-
-            'email' =>
-                $user->email,
-
-            'matricule' =>
-                $marin?->matricule,
-
-            'nid' =>
-                $marin?->nid,
-
-            'grade' =>
-                $marin
-                    ?->grade
-                    ?->libelle_court
-                ?? data_get(
-                    $mindef,
-                    'short_rank'
-                ),
-
-            'brevet' =>
-                $marin
-                    ?->brevet
-                    ?->libelle_court,
-
-            'specialite' =>
-                $marin
-                    ?->specialite
-                    ?->libelle_court,
-
-            'unite' =>
-                $marin
-                    ?->unite
-                    ?->libelle_court
-                ?? data_get(
-                    $mindef,
-                    'main_department_number'
-                ),
-
-            'telephone' =>
-                null,
-        ];
     }
 }

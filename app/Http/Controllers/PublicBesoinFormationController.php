@@ -2,7 +2,6 @@
 
 namespace Modules\FPSplanificationstage\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -10,46 +9,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinConfirmation;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinSuivi;
 use Modules\FPSplanificationstage\Models\BesoinFormation;
-use Modules\FPSplanificationstage\Models\Stage;
 use Modules\FPSplanificationstage\Services\BesoinPeriodeService;
-use Modules\FPSplanificationstage\Services\StagiaireResolver;
-use Modules\RH\Models\Marin;
 use Modules\RH\Models\Unite;
 
 class PublicBesoinFormationController extends Controller
 {
-    public function create(): View
-    {
-        $stages =
-            Stage::query()
-                ->where(
-                    'actif',
-                    true
-                )
-                ->orderBy(
-                    'libelle_court'
-                )
-                ->get();
-
-        return view(
-            'fpsplanificationstage::public.besoin-formation',
-            [
-                'stages' =>
-                    $stages,
-
-                'unites' =>
-                    $this->uniteLabels(),
-
-                'demandeur' =>
-                    $this->demandeurFor(
-                        auth()->user()
-                    ),
-            ]
-        );
-    }
-
     public function store(
         Request $request
     ): RedirectResponse {
@@ -287,6 +254,17 @@ class PublicBesoinFormationController extends Controller
                                     ->stage
                                     ?->libelle_court
                                 ?? 'Stage',
+
+                            'suivi_url' =>
+                                BesoinSuivi::getUrl(
+                                    [
+                                        'token' =>
+                                            $besoin
+                                                ->public_token,
+                                    ],
+                                    panel:
+                                        'fpsplanificationstage'
+                                ),
                         ];
                     }
 
@@ -299,38 +277,21 @@ class PublicBesoinFormationController extends Controller
 
         return redirect()
             ->to(
-                '/apps/fpsplanificationstage/espace-stagiaire/planning-formations/besoins/'
-                . $first['public_token']
-                . '/confirmation'
+                BesoinConfirmation::getUrl(
+                    [
+                        'token' =>
+                            $first[
+                                'public_token'
+                            ],
+                    ],
+                    panel:
+                        'fpsplanificationstage'
+                )
             )
             ->with(
                 'besoins_crees',
                 $created
             );
-    }
-
-    public function confirmation(
-        string $token
-    ): View {
-        $besoin =
-            $this->findPublicBesoin(
-                $token
-            );
-
-        return view(
-            'fpsplanificationstage::public.besoin-formation-confirmation',
-            [
-                'besoin' =>
-                    $besoin,
-            ]
-        );
-    }
-
-    public function suiviForm(): View
-    {
-        return view(
-            'fpsplanificationstage::public.besoin-formation-suivi-recherche'
-        );
     }
 
     public function rechercherSuivi(
@@ -396,197 +357,14 @@ class PublicBesoinFormationController extends Controller
         }
 
         return redirect()->to(
-            '/apps/fpsplanificationstage/espace-stagiaire/planning-formations/besoins/'
-            . $besoin->public_token
-            . '/suivi'
+            BesoinSuivi::getUrl(
+                [
+                    'token' =>
+                        $besoin->public_token,
+                ],
+                panel:
+                    'fpsplanificationstage'
+            )
         );
-    }
-
-    public function suivi(
-        string $token
-    ): View {
-        $besoin =
-            $this->findPublicBesoin(
-                $token
-            );
-
-        $besoin->load([
-            'stage',
-            'sessionStage.stage',
-            'sessionStage.salle',
-        ]);
-
-        $statutPublic =
-            match (
-                $besoin->statut
-            ) {
-                'a_planifier' => [
-                    'label' =>
-                        'Demande reçue',
-
-                    'description' =>
-                        'Votre expression de besoin a bien été reçue et doit être étudiée par les gestionnaires.',
-
-                    'type' =>
-                        'info',
-                ],
-
-                'planifie' => [
-                    'label' =>
-                        'Session planifiée',
-
-                    'description' =>
-                        'Une session a été planifiée à partir de votre expression de besoin.',
-
-                    'type' =>
-                        'success',
-                ],
-
-                'conflit' => [
-                    'label' =>
-                        'En cours d’étude',
-
-                    'description' =>
-                        'La planification nécessite actuellement une étude complémentaire par les gestionnaires.',
-
-                    'type' =>
-                        'warning',
-                ],
-
-                'annule' => [
-                    'label' =>
-                        'Demande annulée',
-
-                    'description' =>
-                        'Cette expression de besoin est indiquée comme annulée.',
-
-                    'type' =>
-                        'danger',
-                ],
-
-                default => [
-                    'label' =>
-                        'En cours d’étude',
-
-                    'description' =>
-                        'Votre expression de besoin est en cours de traitement.',
-
-                    'type' =>
-                        'info',
-                ],
-            };
-
-        return view(
-            'fpsplanificationstage::public.besoin-formation-suivi',
-            [
-                'besoin' =>
-                    $besoin,
-
-                'statutPublic' =>
-                    $statutPublic,
-            ]
-        );
-    }
-
-    private function findPublicBesoin(
-        string $token
-    ): BesoinFormation {
-        return BesoinFormation::query()
-            ->with('stage')
-            ->where(
-                'public_token',
-                $token
-            )
-            ->where(
-                'source',
-                'portail'
-            )
-            ->firstOrFail();
-    }
-
-    /** @return array<int, string> */
-    private function uniteLabels(): array
-    {
-        return Unite::query()
-            ->whereNotNull(
-                'libelle_long'
-            )
-            ->where(
-                'libelle_long',
-                '<>',
-                ''
-            )
-            ->orderBy(
-                'libelle_long'
-            )
-            ->pluck(
-                'libelle_long'
-            )
-            ->unique()
-            ->values()
-            ->all();
-    }
-
-    private function demandeurFor(
-        ?User $user
-    ): ?string {
-        if (! $user) {
-            return null;
-        }
-
-        $marin =
-            Marin::fromUser(
-                $user
-            )
-            ?? app(
-                StagiaireResolver::class
-            )->find([
-                'nom' =>
-                    $user->nom,
-
-                'prenom' =>
-                    $user->prenom,
-
-                'email' =>
-                    $user->email,
-            ]);
-
-        $unite =
-            $marin?->unite
-            ?? $this->findMindefUnite(
-                data_get(
-                    $user->getMindefConnectInformations(),
-                    'main_department_number'
-                )
-            );
-
-        return $unite?->libelle_long;
-    }
-
-    private function findMindefUnite(
-        mixed $mindefUnite
-    ): ?Unite {
-        $mindefUnite = trim(
-            (string) $mindefUnite
-        );
-
-        if ($mindefUnite === '') {
-            return null;
-        }
-
-        return Unite::query()
-            ->where(
-                'libannudef',
-                $mindefUnite
-            )
-            ->orWhere(
-                'libelle_long',
-                $mindefUnite
-            )
-            ->orWhere(
-                'libelle_court',
-                $mindefUnite
-            )
-            ->first();
     }
 }

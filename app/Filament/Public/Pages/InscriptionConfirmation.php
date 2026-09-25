@@ -2,8 +2,7 @@
 
 namespace Modules\FPSplanificationstage\Filament\Public\Pages;
 
-use Illuminate\View\View;
-use Modules\FPSplanificationstage\Http\Controllers\PublicInscriptionController;
+use Modules\FPSplanificationstage\Services\PublicInscriptionPageService;
 
 class InscriptionConfirmation extends PublicPage
 {
@@ -13,13 +12,10 @@ class InscriptionConfirmation extends PublicPage
 
     public function mount(string $code): void
     {
-        $view = app(PublicInscriptionController::class)->confirmation(
-            request(),
+        $this->pageData = app(
+            PublicInscriptionPageService::class
+        )->confirmation(
             $code
         );
-
-        abort_unless($view instanceof View, 404);
-
-        $this->pageData = $view->getData();
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Modules\FPSplanificationstage\Filament\Public\Pages;
 
-use Modules\FPSplanificationstage\Http\Controllers\PublicPlanningController;
 use Modules\FPSplanificationstage\Models\SessionStage;
+use Modules\FPSplanificationstage\Services\PublicSessionPageService;
 
 class SessionDetail extends PublicPage
 {
@@ -15,8 +15,10 @@ class SessionDetail extends PublicPage
     {
         $record = SessionStage::query()->findOrFail($session);
 
-        $view = app(PublicPlanningController::class)->show($record);
-
-        $this->pageData = $view->getData();
+        $this->pageData = app(
+            PublicSessionPageService::class
+        )->detail(
+            $record
+        );
     }
 }

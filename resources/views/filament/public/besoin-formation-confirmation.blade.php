@@ -1,8 +1,5 @@
 <x-filament-panels::page>
     @php
-        $planningUrl =
-            '/apps/fpsplanificationstage/espace-stagiaire/planning-formations';
-
         $besoinsCrees =
             session('besoins_crees', []);
     @endphp
@@ -38,7 +35,7 @@
                                     tag="a"
                                     size="sm"
                                     color="gray"
-                                    href="{{ $planningUrl }}/besoins/{{ $item['public_token'] }}/suivi"
+                                    href="{{ $item['suivi_url'] }}"
                                 >
                                     Suivre ce besoin
                                 </x-filament::button>
@@ -62,7 +59,7 @@
             <div style="margin-top:1rem;">
                 <x-filament::button
                     tag="a"
-                    href="{{ $planningUrl }}/besoins/{{ $besoin->public_token }}/suivi"
+                    href="{{ $suiviUrl }}"
                 >
                     Suivre cette demande
                 </x-filament::button>

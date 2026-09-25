@@ -5,6 +5,7 @@ use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormations;
 use Modules\FPSplanificationstage\Filament\Pages\Admission;
 use Modules\FPSplanificationstage\Filament\Resources\Inscriptions\InscriptionResource;
 use Modules\FPSplanificationstage\Filament\Resources\Stagiaires\StagiaireResource;
@@ -364,7 +365,10 @@ it(
 
         $response
             ->assertRedirect(
-                '/apps/fpsplanificationstage/espace-stagiaire/planning-formations'
+                PlanningFormations::getUrl(
+                    panel:
+                        'fpsplanificationstage'
+                )
             )
             ->assertSessionHas(
                 'inscription_warning',

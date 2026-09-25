@@ -2,7 +2,7 @@
 
 namespace Modules\FPSplanificationstage\Filament\Public\Pages;
 
-use Modules\FPSplanificationstage\Http\Controllers\PublicBesoinFormationController;
+use Modules\FPSplanificationstage\Services\PublicBesoinFormationPageService;
 
 class BesoinSuiviRecherche extends PublicPage
 {
@@ -12,8 +12,8 @@ class BesoinSuiviRecherche extends PublicPage
 
     public function mount(): void
     {
-        $view = app(PublicBesoinFormationController::class)->suiviForm();
-
-        $this->pageData = $view->getData();
+        $this->pageData = app(
+            PublicBesoinFormationPageService::class
+        )->suiviRecherche();
     }
 }

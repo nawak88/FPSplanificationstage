@@ -9,8 +9,7 @@ abstract class PublicPage extends Page
     protected static bool $shouldRegisterNavigation = false;
 
     /**
-     * Donnees preparees par les controleurs historiques.
-     * Les traitements metier restent donc centralises.
+     * Données préparées par les services de présentation du portail.
      *
      * @var array<string, mixed>
      */

@@ -2,7 +2,7 @@
 
 namespace Modules\FPSplanificationstage\Filament\Public\Pages;
 
-use Modules\FPSplanificationstage\Http\Controllers\PublicBesoinFormationController;
+use Modules\FPSplanificationstage\Services\PublicBesoinFormationPageService;
 
 class BesoinNouveau extends PublicPage
 {
@@ -12,8 +12,10 @@ class BesoinNouveau extends PublicPage
 
     public function mount(): void
     {
-        $view = app(PublicBesoinFormationController::class)->create();
-
-        $this->pageData = $view->getData();
+        $this->pageData = app(
+            PublicBesoinFormationPageService::class
+        )->form(
+            auth()->user()
+        );
     }
 }

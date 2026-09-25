@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     <div style="margin-bottom:1rem;">
-        <x-filament::button tag="a" href="/apps/fpsplanificationstage/espace-stagiaire/planning-formations" color="gray">← Retour au portail</x-filament::button>
+        <x-filament::button tag="a" href="{{ $planningUrl }}" color="gray">← Retour au portail</x-filament::button>
     </div>
 
     <x-filament::section>

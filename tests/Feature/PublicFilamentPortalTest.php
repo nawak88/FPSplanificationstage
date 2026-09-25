@@ -21,6 +21,79 @@ it('does not register a second public filament panel provider', function (): voi
         );
 });
 
+it('keeps html preparation out of controllers and generates panel urls', function (): void {
+    $moduleRoot = dirname(__DIR__, 2);
+
+    foreach (
+        glob(
+            $moduleRoot
+            . '/app/Http/Controllers/*.php'
+        )
+        as $controller
+    ) {
+        $source = file_get_contents(
+            $controller
+        );
+
+        expect($source)
+            ->not->toContain('return view(')
+            ->not->toContain('Illuminate\\View\\View');
+    }
+
+    foreach (
+        [
+            '/app',
+            '/resources',
+            '/routes',
+        ]
+        as $directory
+    ) {
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(
+                $moduleRoot . $directory,
+                FilesystemIterator::SKIP_DOTS
+            )
+        );
+
+        foreach ($files as $file) {
+            if (
+                ! $file->isFile()
+                || ! in_array(
+                    $file->getExtension(),
+                    [
+                        'php',
+                        'blade.php',
+                    ],
+                    true
+                )
+            ) {
+                continue;
+            }
+
+            expect(
+                file_get_contents(
+                    $file->getPathname()
+                )
+            )->not->toContain('/apps/');
+        }
+    }
+
+    foreach (
+        [
+            '/app/Services/PublicBesoinFormationPageService.php',
+            '/app/Services/PublicInscriptionPageService.php',
+            '/app/Services/PublicSessionPageService.php',
+        ]
+        as $service
+    ) {
+        expect(
+            file_exists(
+                $moduleRoot . $service
+            )
+        )->toBeTrue();
+    }
+});
+
 it('registers all detail pages below the main training planning', function (): void {
     $routes = collect(Route::getRoutes()->getRoutes());
 

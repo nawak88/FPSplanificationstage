@@ -13,7 +13,7 @@
             </div>
         @endif
         <div style="margin-top:1rem;">
-            <x-filament::button tag="a" href="/apps/fpsplanificationstage/espace-stagiaire/planning-formations">Retour au portail</x-filament::button>
+            <x-filament::button tag="a" href="{{ $planningUrl }}">Retour au portail</x-filament::button>
         </div>
     </x-filament::section>
 </x-filament-panels::page>

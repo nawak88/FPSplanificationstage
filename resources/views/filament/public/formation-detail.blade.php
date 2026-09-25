@@ -1,8 +1,6 @@
 <x-filament-panels::page>
-    @php($base = '/apps/fpsplanificationstage/espace-stagiaire/planning-formations')
-
     <div style="margin-bottom:1rem;">
-        <x-filament::button tag="a" href="{{ $base }}" color="gray">← Retour au planning des formations</x-filament::button>
+        <x-filament::button tag="a" href="{{ $retourUrl }}" color="gray">← Retour au planning des formations</x-filament::button>
     </div>
 
     <x-filament::section>

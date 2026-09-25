@@ -1,5 +1,6 @@
 <?php
 
+use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
 use Modules\FPSplanificationstage\Filament\Widgets\PlanningCalendar;
 use Modules\FPSplanificationstage\Models\SessionStage;
 
@@ -138,7 +139,10 @@ it('keeps the click toward the public detail page', function () {
 
     expect($source)
         ->toContain(
-            '/apps/fpsplanificationstage/espace-stagiaire/planning-formations/sessions/'
+            SessionDetail::class
+        )
+        ->toContain(
+            'SessionDetail::getUrl('
         )
         ->not->toContain(
             'SessionStageResource::getUrl'

@@ -1,8 +1,6 @@
 <x-filament-panels::page>
-    @php($base = '/apps/fpsplanificationstage/espace-stagiaire/planning-formations')
-
     <div style="margin-bottom:1rem;">
-        <x-filament::button tag="a" href="{{ $base }}/sessions/{{ $session->id }}" color="gray">← Retour à la session</x-filament::button>
+        <x-filament::button tag="a" href="{{ $sessionUrl }}" color="gray">← Retour à la session</x-filament::button>
     </div>
 
     <x-filament::section>
@@ -34,7 +32,6 @@
                     ['nid','NID','text'],
                     ['unite','Bâtiment / unité *','text'],
                     ['email','E-mail *','email'],
-                    ['telephone','Téléphone','text'],
                 ] as [$name,$label,$type])
                     <div>
                         <label style="display:block;font-weight:700;margin-bottom:.35rem;">{{ $label }}</label>

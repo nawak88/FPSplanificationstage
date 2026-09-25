@@ -8,13 +8,14 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormations;
 use Modules\FPSplanificationstage\Filament\Public\Pages\Inscription as PublicInscriptionPage;
 use Modules\FPSplanificationstage\Filament\Resources\Inscriptions\Pages\ListInscriptions;
-use Modules\FPSplanificationstage\Http\Controllers\PublicInscriptionController;
 use Modules\FPSplanificationstage\Models\Inscription;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Models\Stage;
 use Modules\FPSplanificationstage\Services\MarinDepuisInscriptionService;
+use Modules\FPSplanificationstage\Services\PublicInscriptionPageService;
 use Modules\RH\Models\Brevet;
 use Modules\RH\Models\Grade;
 use Modules\RH\Models\Marin;
@@ -252,12 +253,12 @@ it(
 
         $data =
             app(
-                PublicInscriptionController::class
+                PublicInscriptionPageService::class
             )
-                ->create(
-                    $session
-                )
-                ->getData();
+                ->form(
+                    $session,
+                    $compteMindef
+                );
 
         expect($data['identity']['grade'])
             ->toBe(
@@ -294,6 +295,10 @@ it(
             )
             ->assertSee(
                 $brevet->libelle_long
+            )
+            ->assertDontSee(
+                'name="telephone"',
+                false
             );
     }
 );
@@ -373,12 +378,18 @@ it(
                 'brevet' =>
                     $brevet->libelle_court,
 
+                'telephone' =>
+                    '01 02 03 04 05',
+
                 'unite' =>
                     'Unité test',
             ]
         )
             ->assertRedirect(
-                '/apps/fpsplanificationstage/espace-stagiaire/planning-formations'
+                PlanningFormations::getUrl(
+                    panel:
+                        'fpsplanificationstage'
+                )
             );
 
         $inscription =
@@ -405,6 +416,8 @@ it(
             ->toBe($specialite->libelle_court)
             ->and($inscription->candidat_brevet)
             ->toBe($brevet->libelle_court)
+            ->and($inscription->candidat_telephone)
+            ->toBeNull()
             ->and($inscription->nom_complet)
             ->toBe('DURAND Alice');
 
