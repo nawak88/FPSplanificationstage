@@ -4,6 +4,7 @@ namespace Modules\FPSplanificationstage\Filament\Pages;
 
 use Carbon\Carbon;
 use Filament\Pages\Page;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\SessionStages\SessionStageResource;
 use Modules\FPSplanificationstage\Models\Salle;
 use Modules\FPSplanificationstage\Models\SessionStage;
@@ -12,6 +13,8 @@ use Modules\RH\Models\Marin;
 
 class Planning extends Page
 {
+    use RequiresAuthentication;
+
     protected string $view =
         'fpsplanificationstage::filament.pages.planning';
 

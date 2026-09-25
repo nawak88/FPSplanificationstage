@@ -19,6 +19,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Models\Salle;
 use Modules\FPSplanificationstage\Models\SalleOccupation;
 use Modules\FPSplanificationstage\Models\SessionStage;
@@ -28,6 +29,7 @@ use Throwable;
 class ReservationsSalles extends Page implements HasTable
 {
     use InteractsWithTable;
+    use RequiresAuthentication;
 
     protected static ?string $navigationLabel =
         'Réservations salles';
@@ -426,4 +428,3 @@ class ReservationsSalles extends Page implements HasTable
             );
     }
 }
-

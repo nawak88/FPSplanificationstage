@@ -9,12 +9,15 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Models\BesoinFormation;
 use Modules\FPSplanificationstage\Models\Inscription;
 use Modules\FPSplanificationstage\Models\SessionStage;
 
 class Statistiques extends Page
 {
+    use RequiresAuthentication;
+
     protected static ?string $navigationLabel =
         'Statistiques';
 

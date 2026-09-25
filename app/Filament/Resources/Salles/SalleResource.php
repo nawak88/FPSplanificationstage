@@ -5,6 +5,7 @@ namespace Modules\FPSplanificationstage\Filament\Resources\Salles;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\Salles\Pages\CreateSalle;
 use Modules\FPSplanificationstage\Filament\Resources\Salles\Pages\EditSalle;
 use Modules\FPSplanificationstage\Filament\Resources\Salles\Pages\ListSalles;
@@ -16,6 +17,8 @@ use Modules\FPSplanificationstage\Models\Salle;
 
 class SalleResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model =
         Salle::class;
 

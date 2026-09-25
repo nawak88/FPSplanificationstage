@@ -5,6 +5,7 @@ namespace Modules\FPSplanificationstage\Filament\Resources\BesoinFormations;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\BesoinFormations\Pages\CreateBesoinFormation;
 use Modules\FPSplanificationstage\Filament\Resources\BesoinFormations\Pages\EditBesoinFormation;
 use Modules\FPSplanificationstage\Filament\Resources\BesoinFormations\Pages\ListBesoinFormations;
@@ -16,6 +17,8 @@ use Modules\FPSplanificationstage\Models\BesoinFormation;
 
 class BesoinFormationResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model =
         BesoinFormation::class;
 

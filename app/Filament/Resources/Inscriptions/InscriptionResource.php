@@ -5,6 +5,7 @@ namespace Modules\FPSplanificationstage\Filament\Resources\Inscriptions;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\Inscriptions\Pages\CreateInscription;
 use Modules\FPSplanificationstage\Filament\Resources\Inscriptions\Pages\EditInscription;
 use Modules\FPSplanificationstage\Filament\Resources\Inscriptions\Pages\ListInscriptions;
@@ -14,6 +15,8 @@ use Modules\FPSplanificationstage\Models\Inscription;
 
 class InscriptionResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model =
         Inscription::class;
 

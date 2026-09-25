@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,6 +13,7 @@ use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Models\Stage;
 use Modules\RH\Models\Marin;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Livewire\livewire;
 
 uses(Tests\TestCase::class, RefreshDatabase::class);
@@ -22,6 +24,11 @@ beforeEach(function (): void {
         Filament::getPanel(
             'fpsplanificationstage'
         )
+    );
+
+    actingAs(
+        User::factory()
+            ->create()
     );
 });
 

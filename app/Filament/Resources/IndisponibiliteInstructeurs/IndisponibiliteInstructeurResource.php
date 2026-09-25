@@ -5,6 +5,7 @@ namespace Modules\FPSplanificationstage\Filament\Resources\IndisponibiliteInstru
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\IndisponibiliteInstructeurs\Pages\CreateIndisponibiliteInstructeur;
 use Modules\FPSplanificationstage\Filament\Resources\IndisponibiliteInstructeurs\Pages\EditIndisponibiliteInstructeur;
 use Modules\FPSplanificationstage\Filament\Resources\IndisponibiliteInstructeurs\Pages\ListIndisponibiliteInstructeurs;
@@ -16,6 +17,8 @@ use Modules\FPSplanificationstage\Models\IndisponibiliteInstructeur;
 
 class IndisponibiliteInstructeurResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model =
         IndisponibiliteInstructeur::class;
 

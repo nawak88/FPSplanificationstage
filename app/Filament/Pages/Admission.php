@@ -13,6 +13,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Models\AdmissionMessageTemplate;
 use Modules\FPSplanificationstage\Models\Inscription;
 use Modules\FPSplanificationstage\Models\SessionStage;
@@ -20,6 +21,8 @@ use Modules\FPSplanificationstage\Models\Stage;
 
 class Admission extends Page
 {
+    use RequiresAuthentication;
+
     protected static ?string $navigationLabel = 'Admission';
     protected static string|\UnitEnum|null $navigationGroup = 'Inscriptions / Admission';
     protected static ?int $navigationSort = 20;

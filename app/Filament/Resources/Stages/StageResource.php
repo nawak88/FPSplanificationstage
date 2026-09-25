@@ -8,6 +8,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\Stages\Pages\CreateStage;
 use Modules\FPSplanificationstage\Filament\Resources\Stages\Pages\EditStage;
 use Modules\FPSplanificationstage\Filament\Resources\Stages\Pages\ListStages;
@@ -18,6 +19,8 @@ use Modules\FPSplanificationstage\Filament\Resources\Stages\Tables\StagesTable;
 
 class StageResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model = Stage::class;
 
     protected static ?string $navigationLabel = 'Catalogue des stages';

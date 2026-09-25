@@ -7,6 +7,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Pages\ListInstructeurs;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Pages\ViewInstructeur;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Schemas\InstructeurInfolist;
@@ -15,6 +16,8 @@ use Modules\RH\Models\Marin;
 
 class InstructeurResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model =
         Marin::class;
 

@@ -5,6 +5,7 @@ namespace Modules\FPSplanificationstage\Filament\Resources\SessionStages;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\SessionStages\Pages\CreateSessionStage;
 use Modules\FPSplanificationstage\Filament\Resources\SessionStages\Pages\EditSessionStage;
 use Modules\FPSplanificationstage\Filament\Resources\SessionStages\Pages\ListSessionStages;
@@ -17,6 +18,8 @@ use Modules\FPSplanificationstage\Models\SessionStage;
 
 class SessionStageResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model =
         SessionStage::class;
 

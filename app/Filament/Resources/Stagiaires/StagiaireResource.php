@@ -7,6 +7,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\Stagiaires\Pages\ListStagiaires;
 use Modules\FPSplanificationstage\Filament\Resources\Stagiaires\Pages\ViewStagiaire;
 use Modules\FPSplanificationstage\Filament\Resources\Stagiaires\Tables\StagiairesTable;
@@ -14,6 +15,8 @@ use Modules\RH\Models\Marin;
 
 class StagiaireResource extends Resource
 {
+    use RequiresAuthentication;
+
     protected static ?string $model =
         Marin::class;
 

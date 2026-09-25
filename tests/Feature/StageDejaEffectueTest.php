@@ -457,6 +457,11 @@ it(
                     true,
             ]);
 
+        actingAs(
+            User::factory()
+                ->create()
+        );
+
         livewire(Admission::class)
             ->set(
                 'sessionId',
