@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Grid;
@@ -30,7 +31,7 @@ class Admission extends Page
 
     public ?int $sessionId = null;
     public ?int $templateId = null;
-    public ?int $templateStageId = null;
+    public ?int $templateStageId = 0;
     public string $templateName = '';
     public string $subjectTemplate = '';
     public string $bodyTemplate = '';
@@ -51,19 +52,32 @@ class Admission extends Page
     {
         return [
             Action::make('newTemplate')
-                ->label('Nouveau')
+                ->label('Nouveau modèle')
                 ->icon('heroicon-o-plus')
                 ->color('gray')
                 ->action(fn () => $this->newTemplate()),
             Action::make('loadTemplate')
-                ->label('Charger')
+                ->label('Recharger')
+                ->icon('heroicon-o-arrow-path')
+                ->visible(fn (): bool => (bool) $this->templateId)
                 ->action(fn () => $this->loadTemplate()),
+            Action::make('duplicateTemplate')
+                ->label('Dupliquer')
+                ->icon('heroicon-o-document-duplicate')
+                ->color('gray')
+                ->visible(fn (): bool => (bool) $this->templateId)
+                ->action(fn () => $this->duplicateTemplate()),
             Action::make('generateMessage')
                 ->label('Générer le message')
                 ->icon('heroicon-o-sparkles')
                 ->action(fn () => $this->generateMessage()),
             Action::make('saveTemplate')
-                ->label('Enregistrer le modèle')
+                ->label(
+                    fn (): string => $this->templateId
+                        ? 'Enregistrer les modifications'
+                        : 'Créer le modèle'
+                )
+                ->icon('heroicon-o-check')
                 ->action(fn () => $this->saveTemplate()),
             Action::make('deleteTemplate')
                 ->label('Supprimer le modèle')
@@ -91,18 +105,28 @@ class Admission extends Page
                             Select::make('templateId')
                                 ->label('Modèle')
                                 ->options($this->templateOptions())
-                                ->placeholder('Aucun modèle')
-                                ->searchable(),
+                                ->placeholder('Nouveau modèle non enregistré')
+                                ->helperText(
+                                    'Tous les modèles sont proposés. Le modèle choisi est chargé automatiquement.'
+                                )
+                                ->searchable()
+                                ->live(),
                         ]),
                 ]),
             Section::make('Modèle du message')
-                ->description('Texte, ordre des blocs et champs candidats entièrement libres.')
+                ->description(
+                    fn (): string => $this->templateId
+                        ? 'Vous modifiez le modèle « ' . $this->templateName . ' ». Utilisez « Dupliquer » pour en créer une variante.'
+                        : 'Vous préparez un nouveau modèle. Donnez-lui un nom puis utilisez « Créer le modèle ».'
+                )
                 ->schema([
                     Grid::make(['lg' => 2])
                         ->schema([
                             TextInput::make('templateName')
                                 ->label('Nom du modèle')
-                                ->placeholder('Ex. Admission standard BIP1'),
+                                ->placeholder('Ex. Admission standard BIP1')
+                                ->required()
+                                ->maxLength(150),
                             Select::make('templateStageId')
                                 ->label('Portée du modèle')
                                 ->options($this->stageOptions())
@@ -113,21 +137,64 @@ class Admission extends Page
                         ->placeholder('Ex. Admission {stage} — {session}'),
                     Textarea::make('bodyTemplate')
                         ->label('Corps complet du message')
+                        ->required()
                         ->rows(14),
                     Grid::make(['lg' => 2])
                         ->schema([
                             Textarea::make('admittedFormat')
                                 ->label('Format d’un candidat admis')
+                                ->required()
                                 ->rows(4),
                             Textarea::make('refusedFormat')
                                 ->label('Format d’un candidat refusé')
+                                ->required()
                                 ->rows(4),
                         ]),
-                    Textarea::make('variablesHelp')
-                        ->label('Variables disponibles')
-                        ->rows(6)
-                        ->disabled()
-                        ->formatStateUsing(fn (): string => $this->variableHelpText()),
+                ]),
+            Section::make('Aide — champs automatiques')
+                ->description(
+                    'Insérez les codes entre accolades dans le modèle. Ils seront remplacés lors de la génération du message.'
+                )
+                ->icon('heroicon-o-question-mark-circle')
+                ->collapsible()
+                ->schema([
+                    TextEntry::make('automaticFieldsUsage')
+                        ->label('Comment les utiliser ?')
+                        ->state(
+                            'Les champs de session peuvent être utilisés dans l’objet et le corps du message. '
+                            . 'Les champs candidat s’utilisent dans les formats « admis » et « refusé ». '
+                            . 'Les codes `{admis}` et `{refuses}` placent ensuite les listes générées dans le corps.'
+                        )
+                        ->markdown()
+                        ->prose(),
+                    Grid::make(['lg' => 2])
+                        ->schema([
+                            TextEntry::make('sessionFieldsHelp')
+                                ->label('Champs de la session')
+                                ->state(
+                                    fn (): string =>
+                                        $this->sessionFieldsHelpText()
+                                )
+                                ->markdown()
+                                ->prose(),
+                            TextEntry::make('candidateFieldsHelp')
+                                ->label('Champs de chaque candidat')
+                                ->state(
+                                    fn (): string =>
+                                        $this->candidateFieldsHelpText()
+                                )
+                                ->markdown()
+                                ->prose(),
+                        ]),
+                    TextEntry::make('automaticFieldsExample')
+                        ->label('Exemple à copier')
+                        ->state(
+                            "Objet : Admission {stage} — {session}\n\n"
+                            . "Corps : Bonjour, voici les candidats admis :\n{admis}\n\n"
+                            . "Format admis : {grade} {nom} {prenom} — {matricule} — {unite}"
+                        )
+                        ->copyable()
+                        ->copyMessage('Exemple copié'),
                 ]),
             Section::make('Candidats')
                 ->description('La sélection ne modifie pas les statuts administratifs.')
@@ -145,12 +212,11 @@ class Admission extends Page
 
     public function mount(): void
     {
+        $this->subjectTemplate =
+            'Admission {stage} — {session}';
+
         $this->bodyTemplate =
-            "Bonjour,\n\n"
-            . "Veuillez trouver ci-dessous les résultats d'admission pour le stage {stage}, session {session}, prévu du {date_debut} au {date_fin}.\n\n"
-            . "CANDIDATS ADMIS\n\n{admis}\n\n"
-            . "CANDIDATS REFUSÉS\n\n{refuses}\n\n"
-            . "Cordialement,";
+            $this->defaultBodyTemplate();
     }
 
     public function updatedSessionId(): void
@@ -159,7 +225,7 @@ class Admission extends Page
         $session = $this->selectedSession();
 
         if (! $session) {
-            $this->templateStageId = null;
+            $this->templateStageId = 0;
             return;
         }
 
@@ -170,23 +236,29 @@ class Admission extends Page
         }
     }
 
+    public function updatedTemplateId(): void
+    {
+        if ($this->templateId) {
+            $this->loadTemplate(false);
+        }
+    }
+
     public function newTemplate(): void
     {
-        $this->templateId = null;
-        $this->templateName = '';
-        $this->templateStageId = $this->selectedSession()?->stage_id;
-        $this->subjectTemplate = '';
-        $this->bodyTemplate = '';
-        $this->admittedFormat = '{grade} {nom} {prenom} — {unite}';
-        $this->refusedFormat = '{grade} {nom} {prenom} — {unite}';
+        $this->resetTemplateForm();
 
         Notification::make()->title('Nouveau modèle')->info()->send();
     }
 
-    public function loadTemplate(): void
+    public function loadTemplate(
+        bool $notify = true
+    ): void
     {
         if (! $this->templateId) {
-            Notification::make()->title('Aucun modèle sélectionné')->warning()->send();
+            if ($notify) {
+                Notification::make()->title('Aucun modèle sélectionné')->warning()->send();
+            }
+
             return;
         }
 
@@ -198,28 +270,87 @@ class Admission extends Page
         }
 
         $this->templateName = $template->nom;
-        $this->templateStageId = $template->stage_id;
+        $this->templateStageId =
+            (int) ($template->stage_id ?? 0);
         $this->subjectTemplate = (string) ($template->objet ?? '');
         $this->bodyTemplate = (string) $template->corps;
         $this->admittedFormat = (string) $template->format_admis;
         $this->refusedFormat = (string) $template->format_refuse;
+        $this->clearGeneratedMessage();
+        $this->resetValidation();
 
-        Notification::make()->title('Modèle chargé')->success()->send();
+        if ($notify) {
+            Notification::make()->title('Modèle chargé')->success()->send();
+        }
+    }
+
+    public function duplicateTemplate(): void
+    {
+        if (! $this->templateId) {
+            return;
+        }
+
+        $this->templateId = null;
+        $this->templateName =
+            'Copie de ' . $this->templateName;
+        $this->clearGeneratedMessage();
+
+        Notification::make()
+            ->title('Copie prête à enregistrer')
+            ->body(
+                'Modifiez le nom ou le contenu, puis utilisez « Créer le modèle ».'
+            )
+            ->info()
+            ->send();
     }
 
     public function saveTemplate(): void
     {
+        $this->resetValidation();
+
         $name = trim($this->templateName);
 
-        if ($name === '' || trim($this->bodyTemplate) === '') {
-            Notification::make()->title('Nom et corps du message requis')->danger()->send();
+        if ($name === '') {
+            $this->addError(
+                'templateName',
+                'Donnez un nom au modèle pour pouvoir l’enregistrer.'
+            );
+
+            Notification::make()->title('Nom du modèle requis')->danger()->send();
+            return;
+        }
+
+        if (mb_strlen($name) > 150) {
+            $this->addError(
+                'templateName',
+                'Le nom du modèle ne peut pas dépasser 150 caractères.'
+            );
+
+            Notification::make()->title('Nom du modèle trop long')->danger()->send();
+            return;
+        }
+
+        if (trim($this->bodyTemplate) === '') {
+            $this->addError(
+                'bodyTemplate',
+                'Le corps du message est obligatoire.'
+            );
+
+            Notification::make()->title('Corps du message requis')->danger()->send();
             return;
         }
 
         if (trim($this->admittedFormat) === '' || trim($this->refusedFormat) === '') {
+            $this->addError(
+                'admittedFormat',
+                'Les formats admis et refusé sont obligatoires.'
+            );
+
             Notification::make()->title('Format candidat requis')->danger()->send();
             return;
         }
+
+        $isNew = ! $this->templateId;
 
         $template = $this->templateId
             ? AdmissionMessageTemplate::query()->find($this->templateId)
@@ -228,7 +359,7 @@ class Admission extends Page
         $template ??= new AdmissionMessageTemplate();
 
         $template->fill([
-            'stage_id' => $this->templateStageId,
+            'stage_id' => $this->templateStageId ?: null,
             'nom' => $name,
             'objet' => trim($this->subjectTemplate) !== '' ? $this->subjectTemplate : null,
             'corps' => $this->bodyTemplate,
@@ -240,7 +371,14 @@ class Admission extends Page
         $template->save();
         $this->templateId = $template->id;
 
-        Notification::make()->title('Modèle enregistré')->success()->send();
+        Notification::make()
+            ->title(
+                $isNew
+                    ? 'Nouveau modèle créé'
+                    : 'Modèle mis à jour'
+            )
+            ->success()
+            ->send();
     }
 
     public function deleteTemplate(): void
@@ -250,8 +388,7 @@ class Admission extends Page
         }
 
         AdmissionMessageTemplate::query()->whereKey($this->templateId)->delete();
-        $this->templateId = null;
-        $this->templateName = '';
+        $this->resetTemplateForm();
 
         Notification::make()->title('Modèle supprimé')->success()->send();
     }
@@ -311,7 +448,7 @@ class Admission extends Page
 
     public function stageOptions(): array
     {
-        return ['' => 'Modèle générique']
+        return [0 => 'Modèle générique']
             + Stage::query()->orderBy('libelle_court')->pluck('libelle_court', 'id')->all();
     }
 
@@ -320,14 +457,6 @@ class Admission extends Page
         $query = AdmissionMessageTemplate::query()
             ->with('stage')
             ->where('actif', true);
-
-        $session = $this->selectedSession();
-
-        if ($session) {
-            $query->where(function ($builder) use ($session): void {
-                $builder->whereNull('stage_id')->orWhere('stage_id', $session->stage_id);
-            });
-        }
 
         return $query
             ->orderByRaw('stage_id IS NULL DESC')
@@ -369,27 +498,34 @@ class Admission extends Page
             ->values();
     }
 
-    public function placeholderHelp(): array
+    public function sessionFieldsHelpText(): string
     {
-        return [
-            'Session' => [
-                '{stage}', '{libelle_long}', '{session}', '{date_debut}', '{date_fin}', '{salle}', '{admis}', '{refuses}',
-            ],
-            'Candidat' => [
-                '{nom}', '{prenom}', '{grade}', '{brevet}', '{specialite}', '{matricule}', '{nid}', '{unite}', '{email}', '{statut}',
-            ],
-        ];
+        return implode("\n", [
+            '- `{stage}` : libellé court du stage',
+            '- `{libelle_long}` : libellé complet du stage',
+            '- `{session}` : code de la session',
+            '- `{date_debut}` : date de début',
+            '- `{date_fin}` : date de fin',
+            '- `{salle}` : salle affectée',
+            '- `{admis}` : liste formatée des candidats admis',
+            '- `{refuses}` : liste formatée des candidats refusés',
+        ]);
     }
 
-    public function variableHelpText(): string
+    public function candidateFieldsHelpText(): string
     {
-        $lines = [];
-
-        foreach ($this->placeholderHelp() as $group => $variables) {
-            $lines[] = $group . ' : ' . implode('  ', $variables);
-        }
-
-        return implode("\n", $lines);
+        return implode("\n", [
+            '- `{nom}` : nom du candidat',
+            '- `{prenom}` : prénom du candidat',
+            '- `{grade}` : grade',
+            '- `{brevet}` : brevet',
+            '- `{specialite}` : spécialité',
+            '- `{matricule}` : matricule',
+            '- `{nid}` : identifiant NID',
+            '- `{unite}` : bâtiment ou unité',
+            '- `{email}` : adresse électronique',
+            '- `{statut}` : statut de l’inscription',
+        ]);
     }
 
     protected function candidateSchema(): array
@@ -511,5 +647,39 @@ class Admission extends Page
         }
 
         return Carbon::parse($value)->format('d/m/Y');
+    }
+
+    private function resetTemplateForm(): void
+    {
+        $this->templateId = null;
+        $this->templateName = '';
+        $this->templateStageId =
+            $this->selectedSession()?->stage_id
+            ?? 0;
+        $this->subjectTemplate =
+            'Admission {stage} — {session}';
+        $this->bodyTemplate =
+            $this->defaultBodyTemplate();
+        $this->admittedFormat =
+            '{grade} {nom} {prenom} — {unite}';
+        $this->refusedFormat =
+            '{grade} {nom} {prenom} — {unite}';
+        $this->clearGeneratedMessage();
+        $this->resetValidation();
+    }
+
+    private function clearGeneratedMessage(): void
+    {
+        $this->finalSubject = '';
+        $this->finalBody = '';
+    }
+
+    private function defaultBodyTemplate(): string
+    {
+        return "Bonjour,\n\n"
+            . "Veuillez trouver ci-dessous les résultats d'admission pour le stage {stage}, session {session}, prévu du {date_debut} au {date_fin}.\n\n"
+            . "CANDIDATS ADMIS\n\n{admis}\n\n"
+            . "CANDIDATS REFUSÉS\n\n{refuses}\n\n"
+            . 'Cordialement,';
     }
 }
