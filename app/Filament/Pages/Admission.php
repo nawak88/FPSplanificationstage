@@ -39,6 +39,7 @@ class Admission extends Page
     public string $refusedFormat = '{grade} {nom} {prenom} — {unite}';
     public string $finalSubject = '';
     public string $finalBody = '';
+    public string $generationWarning = '';
 
     /** @var array<int|string, string> */
     public array $candidateDecisions = [];
@@ -70,7 +71,23 @@ class Admission extends Page
             Action::make('generateMessage')
                 ->label('Générer le message')
                 ->icon('heroicon-o-sparkles')
-                ->action(fn () => $this->generateMessage()),
+                ->modalHeading('Aperçu du message')
+                ->modalDescription(
+                    'Cet aperçu utilise la session et les décisions actuellement sélectionnées.'
+                )
+                ->modalIcon('heroicon-o-sparkles')
+                ->modalWidth('7xl')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Fermer')
+                ->mountUsing(function (Schema $schema): void {
+                    $this->generateMessage(false);
+
+                    $schema->fill([
+                        'previewSubject' => $this->finalSubject,
+                        'previewBody' => $this->finalBody,
+                    ]);
+                })
+                ->schema($this->messagePreviewSchema()),
             Action::make('saveTemplate')
                 ->label(
                     fn (): string => $this->templateId
@@ -86,6 +103,22 @@ class Admission extends Page
                 ->requiresConfirmation()
                 ->modalDescription('Supprimer définitivement ce modèle ?')
                 ->action(fn () => $this->deleteTemplate()),
+            Action::make('automaticFieldsHelp')
+                ->label('Aide sur les champs automatiques')
+                ->icon('heroicon-o-question-mark-circle')
+                ->color('gray')
+                ->iconButton()
+                ->tooltip('Aide sur les champs automatiques')
+                ->modal()
+                ->modalHeading('Champs automatiques')
+                ->modalDescription(
+                    'Insérez les codes entre accolades dans le modèle. Ils seront remplacés lors de la génération du message.'
+                )
+                ->modalIcon('heroicon-o-question-mark-circle')
+                ->modalWidth('5xl')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Fermer')
+                ->schema($this->automaticFieldsHelpSchema()),
         ];
     }
 
@@ -137,64 +170,29 @@ class Admission extends Page
                         ->placeholder('Ex. Admission {stage} — {session}'),
                     Textarea::make('bodyTemplate')
                         ->label('Corps complet du message')
+                        ->helperText(
+                            'Placez {admis} et {refuses} à l’endroit où les listes doivent apparaître. '
+                            . 'Une ligne de champs candidat placée directement sous ALPHA ou BRAVO est également répétée automatiquement.'
+                        )
                         ->required()
                         ->rows(14),
                     Grid::make(['lg' => 2])
                         ->schema([
                             Textarea::make('admittedFormat')
                                 ->label('Format d’un candidat admis')
+                                ->helperText(
+                                    'Utilisez ici les champs candidat comme {grade}, {nom}, {prenom}, {matricule} ou {unite}.'
+                                )
                                 ->required()
                                 ->rows(4),
                             Textarea::make('refusedFormat')
                                 ->label('Format d’un candidat refusé')
+                                ->helperText(
+                                    'Ce format est répété pour chaque candidat marqué « Refusé ».'
+                                )
                                 ->required()
                                 ->rows(4),
                         ]),
-                ]),
-            Section::make('Aide — champs automatiques')
-                ->description(
-                    'Insérez les codes entre accolades dans le modèle. Ils seront remplacés lors de la génération du message.'
-                )
-                ->icon('heroicon-o-question-mark-circle')
-                ->collapsible()
-                ->schema([
-                    TextEntry::make('automaticFieldsUsage')
-                        ->label('Comment les utiliser ?')
-                        ->state(
-                            'Les champs de session peuvent être utilisés dans l’objet et le corps du message. '
-                            . 'Les champs candidat s’utilisent dans les formats « admis » et « refusé ». '
-                            . 'Les codes `{admis}` et `{refuses}` placent ensuite les listes générées dans le corps.'
-                        )
-                        ->markdown()
-                        ->prose(),
-                    Grid::make(['lg' => 2])
-                        ->schema([
-                            TextEntry::make('sessionFieldsHelp')
-                                ->label('Champs de la session')
-                                ->state(
-                                    fn (): string =>
-                                        $this->sessionFieldsHelpText()
-                                )
-                                ->markdown()
-                                ->prose(),
-                            TextEntry::make('candidateFieldsHelp')
-                                ->label('Champs de chaque candidat')
-                                ->state(
-                                    fn (): string =>
-                                        $this->candidateFieldsHelpText()
-                                )
-                                ->markdown()
-                                ->prose(),
-                        ]),
-                    TextEntry::make('automaticFieldsExample')
-                        ->label('Exemple à copier')
-                        ->state(
-                            "Objet : Admission {stage} — {session}\n\n"
-                            . "Corps : Bonjour, voici les candidats admis :\n{admis}\n\n"
-                            . "Format admis : {grade} {nom} {prenom} — {matricule} — {unite}"
-                        )
-                        ->copyable()
-                        ->copyMessage('Exemple copié'),
                 ]),
             Section::make('Candidats')
                 ->description('La sélection ne modifie pas les statuts administratifs.')
@@ -393,24 +391,30 @@ class Admission extends Page
         Notification::make()->title('Modèle supprimé')->success()->send();
     }
 
-    public function generateMessage(): void
+    public function generateMessage(bool $notify = true): bool
     {
         $session = $this->selectedSession();
 
         if (! $session) {
+            $this->clearGeneratedMessage();
             Notification::make()->title('Sélectionne une session')->warning()->send();
-            return;
+
+            return false;
         }
 
         $admitted = [];
         $refused = [];
+        $admittedCandidates = [];
+        $refusedCandidates = [];
 
         foreach ($session->inscriptions as $candidate) {
             $decision = $this->candidateDecisions[$candidate->id] ?? 'ignorer';
 
             if ($decision === 'admis') {
+                $admittedCandidates[] = $candidate;
                 $admitted[] = $this->formatCandidate($candidate, $this->admittedFormat);
             } elseif ($decision === 'refuse') {
+                $refusedCandidates[] = $candidate;
                 $refused[] = $this->formatCandidate($candidate, $this->refusedFormat);
             }
         }
@@ -420,13 +424,36 @@ class Admission extends Page
         $variables['{refuses}'] = implode("\n", $refused);
 
         $this->finalSubject = strtr($this->subjectTemplate, $variables);
-        $this->finalBody = strtr($this->bodyTemplate, $variables);
+        $bodyTemplate = $this->expandCandidateSections(
+            $this->bodyTemplate,
+            $admittedCandidates,
+            $refusedCandidates
+        );
+        $this->finalBody = strtr($bodyTemplate, $variables);
+        $this->generationWarning = $this->buildGenerationWarning();
 
-        Notification::make()
-            ->title('Message généré')
-            ->body(count($admitted) . ' admis — ' . count($refused) . ' refusé(s). Le résultat reste entièrement modifiable.')
-            ->success()
-            ->send();
+        if ($notify) {
+            $notification = Notification::make()
+                ->body(
+                    $this->generationWarning !== ''
+                        ? $this->generationWarning
+                        : count($admitted) . ' admis — ' . count($refused) . ' refusé(s). Le résultat reste entièrement modifiable.'
+                );
+
+            if ($this->generationWarning !== '') {
+                $notification
+                    ->title('Message généré avec des champs non remplacés')
+                    ->warning();
+            } else {
+                $notification
+                    ->title('Message généré')
+                    ->success();
+            }
+
+            $notification->send();
+        }
+
+        return true;
     }
 
     public function sessionOptions(): array
@@ -528,6 +555,72 @@ class Admission extends Page
         ]);
     }
 
+    protected function automaticFieldsHelpSchema(): array
+    {
+        return [
+            TextEntry::make('automaticFieldsUsage')
+                ->label('Comment les utiliser ?')
+                ->state(
+                    'Les champs de session peuvent être utilisés dans l’objet et le corps du message. '
+                    . 'Les champs candidat s’utilisent dans les formats « admis » et « refusé ». '
+                    . 'Les codes `{admis}` et `{refuses}` placent ensuite les listes générées dans le corps. '
+                    . 'Dans un message structuré en paragraphes ALPHA et BRAVO, une ligne contenant directement '
+                    . 'les champs candidat est automatiquement répétée dans le bon paragraphe.'
+                )
+                ->markdown()
+                ->prose(),
+            Grid::make(['lg' => 2])
+                ->schema([
+                    TextEntry::make('sessionFieldsHelp')
+                        ->label('Champs de la session')
+                        ->state(
+                            fn (): string =>
+                                $this->sessionFieldsHelpText()
+                        )
+                        ->markdown()
+                        ->prose(),
+                    TextEntry::make('candidateFieldsHelp')
+                        ->label('Champs de chaque candidat')
+                        ->state(
+                            fn (): string =>
+                                $this->candidateFieldsHelpText()
+                        )
+                        ->markdown()
+                        ->prose(),
+                ]),
+            TextEntry::make('automaticFieldsExample')
+                ->label('Exemple à copier')
+                ->state(
+                    "Objet : Admission {stage} — {session}\n\n"
+                    . "Corps : Bonjour, voici les candidats admis :\n{admis}\n\n"
+                    . "Format admis : {grade} {nom} {prenom} — {matricule} — {unite}"
+                )
+                ->copyable()
+                ->copyMessage('Exemple copié'),
+        ];
+    }
+
+    protected function messagePreviewSchema(): array
+    {
+        return [
+            TextEntry::make('generationWarningPreview')
+                ->label('Modèle à corriger')
+                ->state(fn (): string => $this->generationWarning)
+                ->color('warning')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->visible(fn (): bool => $this->generationWarning !== ''),
+            TextInput::make('previewSubject')
+                ->label('Objet généré')
+                ->disabled()
+                ->dehydrated(false),
+            Textarea::make('previewBody')
+                ->label('Corps généré')
+                ->rows(20)
+                ->disabled()
+                ->dehydrated(false),
+        ];
+    }
+
     protected function candidateSchema(): array
     {
         if (! $this->sessionId) {
@@ -624,6 +717,134 @@ class Admission extends Page
         ]);
     }
 
+    /**
+     * @param  array<int, Inscription>  $admittedCandidates
+     * @param  array<int, Inscription>  $refusedCandidates
+     */
+    private function expandCandidateSections(
+        string $body,
+        array $admittedCandidates,
+        array $refusedCandidates
+    ): string {
+        if (! str_contains($body, '{admis}')) {
+            $body = $this->expandCandidateLineInSection(
+                $body,
+                'ALPHA',
+                'BRAVO',
+                $admittedCandidates
+            );
+        }
+
+        if (! str_contains($body, '{refuses}')) {
+            $body = $this->expandCandidateLineInSection(
+                $body,
+                'BRAVO',
+                null,
+                $refusedCandidates
+            );
+        }
+
+        return $body;
+    }
+
+    /**
+     * @param  array<int, Inscription>  $candidates
+     */
+    private function expandCandidateLineInSection(
+        string $body,
+        string $section,
+        ?string $nextSection,
+        array $candidates
+    ): string {
+        $headingPattern = '/^[^\r\n]*\b'
+            . preg_quote($section, '/')
+            . '\b[^\r\n]*(?:\R|$)/imu';
+
+        if (! preg_match($headingPattern, $body, $headingMatch, PREG_OFFSET_CAPTURE)) {
+            return $body;
+        }
+
+        $sectionStart = $headingMatch[0][1]
+            + strlen($headingMatch[0][0]);
+        $sectionEnd = strlen($body);
+
+        if (
+            $nextSection !== null
+            && preg_match(
+                '/^[^\r\n]*\b'
+                    . preg_quote($nextSection, '/')
+                    . '\b[^\r\n]*(?:\R|$)/imu',
+                $body,
+                $nextHeadingMatch,
+                PREG_OFFSET_CAPTURE,
+                $sectionStart
+            )
+        ) {
+            $sectionEnd = $nextHeadingMatch[0][1];
+        }
+
+        $sectionBody = substr(
+            $body,
+            $sectionStart,
+            $sectionEnd - $sectionStart
+        );
+        $candidatePlaceholders = [
+            '{nom}',
+            '{prenom}',
+            '{grade}',
+            '{brevet}',
+            '{specialite}',
+            '{matricule}',
+            '{nid}',
+            '{unite}',
+            '{email}',
+            '{statut}',
+        ];
+        $candidateLinePattern = '/^[^\r\n]*(?:'
+            . implode(
+                '|',
+                array_map(
+                    fn (string $placeholder): string =>
+                        preg_quote($placeholder, '/'),
+                    $candidatePlaceholders
+                )
+            )
+            . ')[^\r\n]*$/imu';
+
+        if (
+            ! preg_match(
+                $candidateLinePattern,
+                $sectionBody,
+                $candidateLineMatch,
+                PREG_OFFSET_CAPTURE
+            )
+        ) {
+            return $body;
+        }
+
+        $candidateLine = $candidateLineMatch[0][0];
+        $candidateLineOffset = $sectionStart
+            + $candidateLineMatch[0][1];
+        $lineEnding = str_contains($body, "\r\n")
+            ? "\r\n"
+            : "\n";
+        $renderedCandidates = implode(
+            $lineEnding,
+            array_map(
+                fn (Inscription $candidate): string =>
+                    $this->formatCandidate($candidate, $candidateLine),
+                $candidates
+            )
+        );
+
+        return substr_replace(
+            $body,
+            $renderedCandidates,
+            $candidateLineOffset,
+            strlen($candidateLine)
+        );
+    }
+
     private function sessionVariables(SessionStage $session): array
     {
         return [
@@ -672,6 +893,50 @@ class Admission extends Page
     {
         $this->finalSubject = '';
         $this->finalBody = '';
+        $this->generationWarning = '';
+    }
+
+    private function buildGenerationWarning(): string
+    {
+        preg_match_all(
+            '/\{[^{}\r\n]+\}/u',
+            $this->finalSubject . "\n" . $this->finalBody,
+            $matches
+        );
+
+        $placeholders = array_values(
+            array_unique($matches[0] ?? [])
+        );
+
+        if ($placeholders === []) {
+            return '';
+        }
+
+        $candidatePlaceholders = [
+            '{nom}',
+            '{prenom}',
+            '{grade}',
+            '{brevet}',
+            '{specialite}',
+            '{matricule}',
+            '{nid}',
+            '{unite}',
+            '{email}',
+            '{statut}',
+        ];
+
+        $warning = 'Champs non remplacés : '
+            . implode(', ', $placeholders)
+            . '.';
+
+        if (array_intersect($placeholders, $candidatePlaceholders) !== []) {
+            $warning .= ' Placez les champs candidat dans les formats « admis/refusé », '
+                . 'puis utilisez {admis} et {refuses} dans le corps du message.';
+        } else {
+            $warning .= ' Vérifiez leur orthographe dans l’aide des champs automatiques.';
+        }
+
+        return $warning;
     }
 
     private function defaultBodyTemplate(): string
