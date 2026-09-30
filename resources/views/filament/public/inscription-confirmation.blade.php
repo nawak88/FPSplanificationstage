@@ -3,6 +3,7 @@
         <x-slot name="heading">Candidature enregistrée</x-slot>
         <div>Référence : <strong>{{ $inscription->code_inscription }}</strong></div>
         <div style="margin-top:.5rem;">Statut : {{ $inscription->statut }}</div>
+        <div style="margin-top:.5rem;">Motif : {{ $inscription->motif_inscription_label }}</div>
         @if ($inscription->sessionStage?->stage)
             <div style="margin-top:.5rem;">Stage : {{ $inscription->sessionStage->stage->libelle_court }}</div>
         @endif

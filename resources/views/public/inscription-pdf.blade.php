@@ -131,6 +131,13 @@
 
 <table>
     <tr>
+        <td class="label">Motif</td>
+        <td class="value">
+            {{ $inscription->motif_inscription_label }}
+        </td>
+    </tr>
+
+    <tr>
         <td class="label">Nom</td>
         <td class="value">
             {{ $inscription->nom ?: 'Non renseigné' }}

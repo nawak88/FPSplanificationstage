@@ -52,6 +52,9 @@ class CreateInscription extends CreateRecord
             'derogation_demandee' =>
                 false,
 
+            'motif_inscription' =>
+                'sans_objet',
+
             'source' =>
                 'manuel',
         ]);

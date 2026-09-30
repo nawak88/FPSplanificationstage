@@ -6,12 +6,12 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Pages\ListInstructeurs;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Pages\ViewInstructeur;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Schemas\InstructeurInfolist;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Tables\InstructeursTable;
+use Modules\FPSplanificationstage\Services\InstructeurConnecteService;
 use Modules\RH\Models\Marin;
 
 class InstructeurResource extends Resource
@@ -35,27 +35,13 @@ class InstructeurResource extends Resource
 
     protected static ?int $navigationSort = 20;
 
-    public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): Builde
     {
-        return parent::getEloquentQuery()
-            ->where(
-                fn (Builder $query): Builder => $query
-                    ->whereIn(
-                        'rh_marins.id',
-                        DB::table('instructeur_stage')
-                            ->select('instructeur_id')
-                    )
-                    ->orWhereIn(
-                        'rh_marins.id',
-                        DB::table('instructeur_session_stage')
-                            ->select('instructeur_id')
-                    )
-                    ->orWhereIn(
-                        'rh_marins.id',
-                        DB::table('indisponibilite_instructeurs')
-                            ->select('instructeur_id')
-                    )
-            );
+        return app(
+            InstructeurConnecteService::class
+        )->seulementInstructeurs(
+            parent::getEloquentQuery()
+        );
     }
 
     public static function form(Schema $schema): Schema

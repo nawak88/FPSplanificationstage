@@ -14,8 +14,9 @@ it('the training planning remains in the main filament panel', function (): void
 
     expect($source)
         ->toContain("->id(\n                'fpsplanificationstage'")
-        ->toContain('PlanningFormations::class')
-        ->toContain('SessionDetail::class')
+        ->toContain("'app/Filament/Pages'")
+        ->toContain("'app/Filament/Public/Pages'")
+        ->not->toContain('->pages([')
         ->not->toContain('PublicFilamentPanelProvider');
 });
 

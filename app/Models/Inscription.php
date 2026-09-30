@@ -18,6 +18,7 @@ protected $table = 'inscriptions';
     protected $fillable = [
         'presence',
         'stage_deja_effectue',
+        'motif_inscription',
         'stagiaire_id',
         'candidat_user_id',
         'candidat_nom',
@@ -57,6 +58,41 @@ protected $table = 'inscriptions';
         'stage_deja_effectue' =>
             'boolean',
     ];
+
+    public static function motifInscriptionOptions(): array
+    {
+        return [
+            'cursus_specialite' =>
+                'Cursus de spécialité',
+
+            'depart_outre_mer' =>
+                'Départ outre-mer',
+
+            'par_unite_deficitaire' =>
+                'PAR de l’unité déficitaire',
+
+            'preparation_prochain_pam' =>
+                'Préparation prochain PAM',
+
+            'prerequis_bs_csup' =>
+                'Prérequis BS ou CSUP',
+
+            'autre' =>
+                'Autre',
+
+            'sans_objet' =>
+                'Sans objet',
+        ];
+    }
+
+    public function getMotifInscriptionLabelAttribute(): string
+    {
+        return static::motifInscriptionOptions()[
+            $this->motif_inscription
+        ]
+            ?? $this->motif_inscription
+            ?? 'Sans objet';
+    }
 
     protected static function booted(): void
     {

@@ -666,6 +666,9 @@ it(
 
                 'unite' =>
                     'Unité test',
+
+                'motif_inscription' =>
+                    'depart_outre_mer',
             ]
         )
             ->assertRedirect(
@@ -701,6 +704,8 @@ it(
             ->toBe($brevet->libelle_court)
             ->and($inscription->candidat_telephone)
             ->toBeNull()
+            ->and($inscription->motif_inscription)
+            ->toBe('depart_outre_mer')
             ->and($inscription->nom_complet)
             ->toBe('DURAND Alice');
 

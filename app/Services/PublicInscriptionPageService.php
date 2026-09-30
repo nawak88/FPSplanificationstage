@@ -17,7 +17,7 @@ class PublicInscriptionPageService
     /** @return array<string, mixed> */
     public function form(
         SessionStage $session,
-        User $user
+        User $use
     ): array {
         $this->ensureSessionIsRegistrable(
             $session
@@ -43,7 +43,7 @@ class PublicInscriptionPageService
 
             'identity' =>
                 $this->identityFor(
-                    $user
+                    $use
                 ),
 
             'grades' =>
@@ -62,6 +62,9 @@ class PublicInscriptionPageService
                     ->orderBy('ordre')
                     ->orderBy('libelle_long')
                     ->get(),
+
+            'motifOptions' =>
+                Inscription::motifInscriptionOptions(),
 
             'sessionUrl' =>
                 SessionDetail::getUrl(
@@ -126,11 +129,11 @@ class PublicInscriptionPageService
 
     /** @return array<string, ?string> */
     private function identityFor(
-        User $user
+        User $use
     ): array {
         $marin =
             Marin::fromUser(
-                $user
+                $use
             )
             ?? app(
                 StagiaireResolver::class
@@ -146,7 +149,7 @@ class PublicInscriptionPageService
             ]);
 
         $mindef =
-            $user
+            $use
                 ->getMindefConnectInformations();
 
         return [

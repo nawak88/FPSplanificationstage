@@ -105,6 +105,23 @@
                         </x-filament::input.select>
                     </x-filament::input.wrapper>
                 </div>
+
+                <div style="grid-column:1/-1;">
+                    <label style="display:block;font-weight:700;margin-bottom:.35rem;">Motif *</label>
+                    <x-filament::input.wrapper>
+                        <x-filament::input.select name="motif_inscription" required>
+                            <option value="">Sélectionner un motif</option>
+                            @foreach ($motifOptions as $value => $label)
+                                <option
+                                    value="{{ $value }}"
+                                    @selected(old('motif_inscription') === $value)
+                                >
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </x-filament::input.select>
+                    </x-filament::input.wrapper>
+                </div>
             </div>
         </x-filament::section>
 

@@ -360,6 +360,9 @@ it(
 
                 'email' =>
                     $marin->email,
+
+                'motif_inscription' =>
+                    'cursus_specialite',
             ]
         );
 

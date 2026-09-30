@@ -3,7 +3,19 @@
 use Filament\Facades\Filament;
 use Guava\Calendar\ValueObjects\FetchInfo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\FPSplanificationstage\Filament\Pages\Admission;
+use Modules\FPSplanificationstage\Filament\Pages\Dashboard;
+use Modules\FPSplanificationstage\Filament\Pages\EspaceInstructeur;
 use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormations;
+use Modules\FPSplanificationstage\Filament\Pages\ReservationsSalles;
+use Modules\FPSplanificationstage\Filament\Pages\Statistiques;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinConfirmation;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinNouveau;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinSuivi;
+use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinSuiviRecherche;
+use Modules\FPSplanificationstage\Filament\Public\Pages\Inscription;
+use Modules\FPSplanificationstage\Filament\Public\Pages\InscriptionConfirmation;
+use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
 use Modules\FPSplanificationstage\Filament\Widgets\PlanningCalendar;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Models\Stage;
@@ -17,10 +29,28 @@ it('page metadata matches espace stagiaire', function () {
         ->and(PlanningFormations::getNavigationGroup())->toBe('Espace stagiaire');
 });
 
-it('page is registered in fpsplanificationstage panel', function () {
+it('discovers every module page in the fpsplanificationstage panel', function () {
     $panel = Filament::getPanel('fpsplanificationstage');
 
-    expect($panel->getPages())->toContain(PlanningFormations::class);
+    expect($panel->getPageDirectories())
+        ->toContain(module_path('FPSplanificationstage', 'app/Filament/Pages'))
+        ->toContain(module_path('FPSplanificationstage', 'app/Filament/Public/Pages'))
+        ->and($panel->getPages())
+        ->toContain(
+            Dashboard::class,
+            EspaceInstructeur::class,
+            Statistiques::class,
+            Admission::class,
+            PlanningFormations::class,
+            ReservationsSalles::class,
+            SessionDetail::class,
+            Inscription::class,
+            InscriptionConfirmation::class,
+            BesoinNouveau::class,
+            BesoinSuiviRecherche::class,
+            BesoinConfirmation::class,
+            BesoinSuivi::class,
+        );
 });
 
 it('page uses native filament schema and guava calendar', function () {

@@ -26,20 +26,8 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Modules\FPSplanificationstage\Filament\Pages\Dashboard;
-use Modules\FPSplanificationstage\Filament\Pages\EspaceInstructeur;
-use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormations;
-use Modules\FPSplanificationstage\Filament\Pages\Statistiques;
-use Modules\FPSplanificationstage\Filament\Pages\ReservationsSalles;
-use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinConfirmation;
-use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinNouveau;
-use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinSuivi;
-use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinSuiviRecherche;
-use Modules\FPSplanificationstage\Filament\Public\Pages\Inscription;
-use Modules\FPSplanificationstage\Filament\Public\Pages\InscriptionConfirmation;
-use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
 
-class FilamentPanelProvider extends PanelProvider
+class FilamentPanelProvider extends PanelProvide
 {
     use UsesSkeletorPrefixAndMultitenancyTrait;
 
@@ -88,21 +76,24 @@ class FilamentPanelProvider extends PanelProvider
                 for:
                     "$moduleNamespace\\Filament\\Resources"
             )
-            ->pages([
-                Dashboard::class,
-                EspaceInstructeur::class,
-                Statistiques::class,
-                \Modules\FPSplanificationstage\Filament\Pages\Admission::class,
-                PlanningFormations::class,
-                ReservationsSalles::class,
-                SessionDetail::class,
-                Inscription::class,
-                InscriptionConfirmation::class,
-                BesoinNouveau::class,
-                BesoinSuiviRecherche::class,
-                BesoinConfirmation::class,
-                BesoinSuivi::class
-            ])
+            ->discoverPages(
+                in:
+                    module_path(
+                        $this->module,
+                        'app/Filament/Pages'
+                    ),
+                for:
+                    "$moduleNamespace\\Filament\\Pages"
+            )
+            ->discoverPages(
+                in:
+                    module_path(
+                        $this->module,
+                        'app/Filament/Public/Pages'
+                    ),
+                for:
+                    "$moduleNamespace\\Filament\\Public\\Pages"
+            )
             ->discoverWidgets(
                 in:
                     module_path(

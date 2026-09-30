@@ -71,14 +71,14 @@ function creerSessionInstructeur(
     ]);
 
     $session->instructeurs()->attach(
-        $instructeur
+        $instructeu
     );
 
     return $session;
 }
 
 it(
-    'ouvre l espace instructeur au marin authentifie meme sans affectation',
+    'ouvre l espace uniquement au marin renseigne comme instructeur',
     function (): void {
         expect(
             EspaceInstructeur::canAccess()
@@ -93,9 +93,25 @@ it(
         )->toBeFalse();
 
         $user = User::factory()->create();
-        creerMarinInstructeur($user);
+        $instructeur = creerMarinInstructeur(
+            $use
+        );
 
         actingAs($user);
+
+        expect(
+            EspaceInstructeur::canAccess()
+        )->toBeFalse();
+
+        get(
+            EspaceInstructeur::getUrl(
+                panel: 'fpsplanificationstage'
+            )
+        )->assertForbidden();
+
+        creerSessionInstructeur(
+            $instructeu
+        );
 
         expect(
             EspaceInstructeur::canAccess()
@@ -107,7 +123,29 @@ it(
             )
         )
             ->assertSuccessful()
-            ->assertSee('Mon espace instructeur');
+            ->assertSee('Mon espace instructeur')
+            ->assertSee('Mon activité');
+    }
+);
+
+it(
+    'ne donne pas l espace instructeur au superadministrateur non instructeur',
+    function (): void {
+        $admin = User::factory()->create([
+            'admin' => true,
+        ]);
+
+        actingAs($admin);
+
+        expect(
+            EspaceInstructeur::canAccess()
+        )->toBeFalse();
+
+        get(
+            EspaceInstructeur::getUrl(
+                panel: 'fpsplanificationstage'
+            )
+        )->assertForbidden();
     }
 );
 
@@ -120,7 +158,7 @@ it(
             'email' => 'claire.reconnue@example.test',
         ]);
 
-        Marin::withoutEvents(
+        $instructeur = Marin::withoutEvents(
             fn (): Marin => Marin::withoutGlobalScopes()->create([
                 'uuid' => (string) Str::uuid(),
                 'nom' => 'RECONNU',
@@ -129,6 +167,11 @@ it(
                 'matricule' => 'MAT-RECONNU',
                 'email' => 'claire.reconnue@example.test',
             ])
+        );
+
+        creerSessionInstructeur(
+            $instructeur,
+            'Formation MindefConnect'
         );
 
         actingAs($user);

@@ -89,8 +89,19 @@ class InscriptionForm
                             ->searchable()
                             ->required(),
 
+                        Select::make(
+                            'motif_inscription'
+                        )
+                            ->label('Motif')
+                            ->options(
+                                Inscription::motifInscriptionOptions()
+                            )
+                            ->default('sans_objet')
+                            ->selectablePlaceholder(false)
+                            ->required(),
+
                     ])
-                    ->columns(1),
+                    ->columns(2),
 
                 Section::make(
                     'Stagiaire'

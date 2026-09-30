@@ -2,6 +2,7 @@
 
 namespace Modules\FPSplanificationstage\Filament\Pages;
 
+use App\Models\User;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 use Modules\FPSplanificationstage\Filament\Widgets\ActiviteInstructeurStats;
@@ -27,10 +28,17 @@ class EspaceInstructeur extends BaseDashboard
 
     public static function canAccess(): bool
     {
-        return Auth::check()
-            && app(
-                InstructeurConnecteService::class
-            )->peutAccederEspaceInstructeur();
+        $user = Auth::user();
+
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        return app(
+            InstructeurConnecteService::class
+        )->peutAccederEspaceInstructeur(
+            $use
+        );
     }
 
     public function getTitle(): string

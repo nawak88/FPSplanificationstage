@@ -4,11 +4,16 @@ namespace Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Pages;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Storage;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\InstructeurResource;
+use Modules\FPSplanificationstage\Models\Stage;
+use Modules\FPSplanificationstage\Services\InstructeurManuelService;
 use Modules\FPSplanificationstage\Services\InstructeurStageImporter;
+use Modules\RH\Models\Marin;
 use Throwable;
 
 class ListInstructeurs extends ListRecords
@@ -18,6 +23,109 @@ class ListInstructeurs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('ajouterInstructeur')
+                ->label('Ajouter un instructeur')
+                ->icon('heroicon-o-user-plus')
+                ->color('success')
+                ->authorize(
+                    fn (): bool =>
+                        auth()->user()?->can(
+                            'fpsplanificationstage::gerer_le_module'
+                        ) ?? false
+                )
+                ->modalHeading('Ajouter un instructeur manuellement')
+                ->modalDescription(
+                    'Sélectionnez un marin existant dans RH et les stages qu’il peut encadrer.'
+                )
+                ->modalSubmitActionLabel('Ajouter')
+                ->schema([
+                    Select::make('marin_id')
+                        ->label('Marin')
+                        ->options(
+                            fn (): array => Marin::withoutGlobalScopes()
+                                ->orderBy('nom')
+                                ->orderBy('prenom')
+                                ->get()
+                                ->mapWithKeys(
+                                    fn (Marin $marin): array => [
+                                        $marin->getKey() => trim(
+                                            mb_strtoupper($marin->nom)
+                                            . ' '
+                                            . $marin->prenom
+                                        )
+                                        . ($marin->matricule
+                                            ? ' — ' . $marin->matricule
+                                            : '')
+                                        . ($marin->nid
+                                            ? ' — NID ' . $marin->nid
+                                            : ''),
+                                    ]
+                                )
+                                ->all()
+                        )
+                        ->searchable()
+                        ->preload()
+                        ->required(),
+                    Select::make('stage_ids')
+                        ->label('Stages enseignés')
+                        ->options(
+                            fn (): array => Stage::query()
+                                ->where('actif', true)
+                                ->orderBy('libelle_court')
+                                ->get()
+                                ->mapWithKeys(
+                                    fn (Stage $stage): array => [
+                                        $stage->getKey() =>
+                                            ($stage->code_stage
+                                                ? $stage->code_stage . ' — '
+                                                : '')
+                                            . $stage->libelle_court,
+                                    ]
+                                )
+                                ->all()
+                        )
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->required(),
+                    Select::make('role')
+                        ->label('Rôle')
+                        ->options([
+                            'principal' => 'Principal',
+                            'suppleant' => 'Suppléant',
+                            'indifferent' => 'Indifférent',
+                        ])
+                        ->default('indifferent')
+                        ->required(),
+                    Textarea::make('commentaire')
+                        ->label('Commentaire')
+                        ->rows(3),
+                ])
+                ->action(function (array $data): void {
+                    $instructeur = app(
+                        InstructeurManuelService::class
+                    )->ajouter(
+                        (int) $data['marin_id'],
+                        $data['stage_ids'],
+                        $data['role'],
+                        $data['commentaire'] ?? null
+                    );
+
+                    $this->resetTable();
+
+                    Notification::make()
+                        ->title('Instructeur ajouté')
+                        ->body(
+                            trim(
+                                mb_strtoupper($instructeur->nom)
+                                . ' '
+                                . $instructeur->prenom
+                            )
+                            . ' est maintenant disponible dans l’onglet Instructeurs.'
+                        )
+                        ->success()
+                        ->send();
+                }),
             Action::make('importInstructeurs')
                 ->label('Importer Excel')
                 ->icon('heroicon-o-arrow-up-tray')

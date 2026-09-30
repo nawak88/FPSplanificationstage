@@ -113,28 +113,20 @@ class InscriptionsTable
                     ->wrap(),
 
                 TextColumn::make(
-                    'stage_deja_effectue'
+                    'motif_inscription'
                 )
-                    ->label('Priorité')
+                    ->label('Motif')
                     ->formatStateUsing(
-                        fn (bool $state): string =>
-                            $state
-                                ? 'Non prioritaire'
-                                : 'Prioritaire'
+                        fn (
+                            ?string $state
+                        ): string =>
+                            Inscription::motifInscriptionOptions()[
+                                $state
+                            ]
+                            ?? $state
+                            ?? 'Sans objet'
                     )
-                    ->badge()
-                    ->color(
-                        fn (bool $state): string =>
-                            $state
-                                ? 'warning'
-                                : 'success'
-                    )
-                    ->icon(
-                        fn (bool $state): string =>
-                            $state
-                                ? 'heroicon-o-exclamation-triangle'
-                                : 'heroicon-o-check-circle'
-                    )
+                    ->wrap()
                     ->sortable(),
 
                 TextColumn::make(
@@ -253,6 +245,14 @@ class InscriptionsTable
                             'Annulée',
                     ])
                     ->multiple(),
+
+                SelectFilter::make(
+                    'motif_inscription'
+                )
+                    ->label('Motif')
+                    ->options(
+                        Inscription::motifInscriptionOptions()
+                    ),
 
                 SelectFilter::make(
                     'session_stage_id'

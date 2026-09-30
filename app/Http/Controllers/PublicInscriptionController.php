@@ -24,7 +24,7 @@ use Modules\RH\Models\Grade;
 use Modules\RH\Models\Marin;
 use Modules\RH\Models\Specialite;
 
-class PublicInscriptionController extends Controller
+class PublicInscriptionController extends Controlle
 {
     public function store(
         Request $request,
@@ -136,6 +136,15 @@ class PublicInscriptionController extends Controller
                     'max:255',
                 ],
 
+                'motif_inscription' => [
+                    'required',
+                    Rule::in(
+                        array_keys(
+                            Inscription::motifInscriptionOptions()
+                        )
+                    ),
+                ],
+
                 'prerequis' => [
                     'nullable',
                     'array',
@@ -159,7 +168,7 @@ class PublicInscriptionController extends Controller
 
         $stagiaire =
             Marin::fromUser(
-                $user
+                $use
             )
             ?? app(
                 StagiaireResolver::class
@@ -318,6 +327,11 @@ class PublicInscriptionController extends Controller
 
                             'candidat_unite' =>
                                 $validated['unite'],
+
+                            'motif_inscription' =>
+                                $validated[
+                                    'motif_inscription'
+                                ],
 
                             'statut' =>
                                 $statut,
