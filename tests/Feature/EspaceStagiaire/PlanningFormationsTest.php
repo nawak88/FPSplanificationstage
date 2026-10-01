@@ -35,24 +35,19 @@ it('discovers every module page in the fpsplanificationstage panel', function ()
     $panel = Filament::getPanel('fpsplanificationstage');
 
     expect($panel->getPageDirectories())
-        ->toContain(module_path('FPSplanificationstage', 'app/Filament/Pages'))
-        ->toContain(module_path('FPSplanificationstage', 'app/Filament/Public/Pages'))
-        ->and($panel->getPages())
-        ->toContain(
-            Dashboard::class,
-            EspaceInstructeur::class,
-            Statistiques::class,
-            Admission::class,
-            PlanningFormations::class,
-            ReservationsSalles::class,
-            SessionDetail::class,
-            Inscription::class,
-            InscriptionConfirmation::class,
-            BesoinNouveau::class,
-            BesoinSuiviRecherche::class,
-            BesoinConfirmation::class,
-            BesoinSuivi::class,
-        );
+        ->toContain(module_path('FPSplanificationstage', 'app/Filament/Pages'));
+    expect($panel->getPages())->toContain(
+        Dashboard::class, EspaceInstructeur::class, Statistiques::class,
+        Admission::class, PlanningFormations::class, ReservationsSalles::class
+    );
+    $resource = \Modules\FPSplanificationstage\Filament\Resources\PortailFormations\PortailFormationResource::class;
+    expect($panel->getResources())->toContain($resource);
+    $pages = array_map(fn ($page) => $page->getPage(), $resource::getPages());
+    expect($pages)->toContain(
+        SessionDetail::class, Inscription::class, InscriptionConfirmation::class,
+        BesoinNouveau::class, BesoinSuiviRecherche::class,
+        BesoinConfirmation::class, BesoinSuivi::class
+    );
 });
 
 it('uses the native filament panel provider', function () {

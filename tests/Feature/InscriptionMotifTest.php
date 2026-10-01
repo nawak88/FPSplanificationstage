@@ -14,7 +14,6 @@ use Modules\FPSplanificationstage\Models\Stage;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
-use function Pest\Laravel\post;
 use function Pest\Livewire\livewire;
 
 uses(Tests\TestCase::class, RefreshDatabase::class);
@@ -74,7 +73,7 @@ it('affiche et enregistre le motif choisi pendant l inscription', function (): v
         )
     )
         ->assertSuccessful()
-        ->assertSee('name="motif_inscription"', false)
+        ->assertSee('data.motif_inscription', false)
         ->assertSee('Cursus de spécialité')
         ->assertSee('Départ outre-mer')
         ->assertSee('PAR de l’unité déficitaire')
@@ -82,16 +81,10 @@ it('affiche et enregistre le motif choisi pendant l inscription', function (): v
         ->assertSee('Prérequis BS ou CSUP')
         ->assertSee('Sans objet');
 
-    post(
-        route(
-            'fpsplanificationstage.public.inscription.store',
-            ['session' => $session->getKey()]
-        ),
-        [
+    \Pest\Livewire\livewire(\Modules\FPSplanificationstage\Filament\Public\Pages\Inscription::class, ['session' => $session->getKey()])->fillForm([
             'unite' => 'Unité test',
             'motif_inscription' => 'par_unite_deficitaire',
-        ]
-    )->assertRedirect(
+        ])->call('submit')->assertRedirect(
         PlanningFormations::getUrl(
             panel: 'fpsplanificationstage'
         )
@@ -112,16 +105,10 @@ it('refuse un motif qui ne fait pas partie de la liste', function (): void {
 
     actingAs($candidate);
 
-    post(
-        route(
-            'fpsplanificationstage.public.inscription.store',
-            ['session' => $session->getKey()]
-        ),
-        [
+    \Pest\Livewire\livewire(\Modules\FPSplanificationstage\Filament\Public\Pages\Inscription::class, ['session' => $session->getKey()])->fillForm([
             'unite' => 'Unité test',
             'motif_inscription' => 'motif-inconnu',
-        ]
-    )->assertSessionHasErrors('motif_inscription');
+        ])->call('submit')->assertHasFormErrors(['motif_inscription']);
 
     expect(Inscription::query()->count())->toBe(0);
 });

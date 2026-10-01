@@ -6,9 +6,13 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\InstructeurResource;
 use Modules\FPSplanificationstage\Models\Stage;
 use Modules\FPSplanificationstage\Services\InstructeurManuelService;
@@ -35,10 +39,15 @@ class ListInstructeurs extends ListRecords
                 )
                 ->modalHeading('Ajouter un instructeur manuellement')
                 ->modalDescription(
-                    'Sélectionnez un marin existant dans RH et les stages qu’il peut encadrer.'
+                    'Sélectionnez un marin existant ou créez sa fiche RH, puis choisissez ses stages.'
                 )
                 ->modalSubmitActionLabel('Ajouter')
                 ->schema([
+                    Toggle::make('nouveau_marin')
+                        ->label('Marin absent de RH')
+                        ->helperText('Une fiche marin sera créée dans RH lors de l’ajout de l’instructeur.')
+                        ->default(false)
+                        ->live(),
                     Select::make('marin_id')
                         ->label('Marin')
                         ->options(
@@ -65,7 +74,23 @@ class ListInstructeurs extends ListRecords
                         )
                         ->searchable()
                         ->preload()
-                        ->required(),
+                        ->visible(fn (Get $get): bool => ! $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => ! $get('nouveau_marin')),
+                    TextInput::make('nom')
+                        ->label('Nom')
+                        ->maxLength(255)
+                        ->visible(fn (Get $get): bool => (bool) $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => (bool) $get('nouveau_marin')),
+                    TextInput::make('prenom')
+                        ->label('Prénom')
+                        ->maxLength(255)
+                        ->visible(fn (Get $get): bool => (bool) $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => (bool) $get('nouveau_marin')),
+                    TextInput::make('nid')
+                        ->label('NID')
+                        ->maxLength(15)
+                        ->visible(fn (Get $get): bool => (bool) $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => (bool) $get('nouveau_marin')),
                     Select::make('stage_ids')
                         ->label('Stages enseignés')
                         ->options(
@@ -102,14 +127,27 @@ class ListInstructeurs extends ListRecords
                         ->rows(3),
                 ])
                 ->action(function (array $data): void {
-                    $instructeur = app(
-                        InstructeurManuelService::class
-                    )->ajouter(
-                        (int) $data['marin_id'],
-                        $data['stage_ids'],
-                        $data['role'],
-                        $data['commentaire'] ?? null
-                    );
+                    try {
+                        $instructeur = app(
+                            InstructeurManuelService::class
+                        )->ajouter(
+                            filled($data['marin_id'] ?? null) ? (int) $data['marin_id'] : null,
+                            $data['stage_ids'],
+                            $data['role'],
+                            $data['commentaire'] ?? null,
+                            ($data['nouveau_marin'] ?? false)
+                                ? array_intersect_key($data, array_flip(['nom', 'prenom', 'nid']))
+                                : null
+                        );
+
+                    } catch (ValidationException $exception) {
+                        $statePath = $this->getMountedActionSchema()->getStatePath();
+                        $errors = [];
+                        foreach ($exception->errors() as $field => $messages) {
+                            $errors[$statePath . '.' . $field] = $messages;
+                        }
+                        throw ValidationException::withMessages($errors);
+                    }
 
                     $this->resetTable();
 

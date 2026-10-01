@@ -178,3 +178,56 @@ it(
         ]);
     }
 );
+
+
+it('cree la fiche RH du marin inconnu et ses habilitations', function (): void {
+    Illuminate\Support\Facades\Queue::fake();
+    actingAs(creerUtilisateurGestionnaireInstructeurs());
+    $stage = Stage::create(['libelle_court' => 'Stage nouveau marin', 'actif' => true]);
+
+    livewire(ListInstructeurs::class)
+        ->callAction('ajouterInstructeur', [
+            'nouveau_marin' => true,
+            'nom' => 'MARTIN',
+            'prenom' => 'Alice',
+            'nid' => 'NID-NOUVEAU-001',
+            'stage_ids' => [$stage->getKey()],
+            'role' => 'principal',
+        ])
+        ->assertHasNoActionErrors();
+
+    $marin = Marin::withoutGlobalScopes()->where('nid', 'NID-NOUVEAU-001')->sole();
+    expect($marin->nom)->toBe('MARTIN');
+    $this->assertDatabaseHas('instructeur_stage', [
+        'instructeur_id' => $marin->id,
+        'stage_id' => $stage->id,
+        'role' => 'principal',
+    ]);
+    Illuminate\Support\Facades\Queue::assertPushed(Modules\RH\Jobs\ConfirmMarinUuidJob::class);
+});
+
+it('exige l identite du marin absent de RH', function (): void {
+    actingAs(creerUtilisateurGestionnaireInstructeurs());
+    livewire(ListInstructeurs::class)
+        ->callAction('ajouterInstructeur', ['nouveau_marin' => true])
+        ->assertHasActionErrors([
+            'nom' => 'required', 'prenom' => 'required', 'nid' => 'required',
+            'stage_ids' => 'required',
+        ]);
+});
+
+it('refuse un NID deja connu sans creer de doublon', function (): void {
+    actingAs(creerUtilisateurGestionnaireInstructeurs());
+    $marin = creerMarinPourAjoutManuel();
+    $stage = Stage::create(['libelle_court' => 'Stage doublon', 'actif' => true]);
+    livewire(ListInstructeurs::class)
+        ->callAction('ajouterInstructeur', [
+            'nouveau_marin' => true,
+            'nom' => 'Autre', 'prenom' => 'Identite',
+            'nid' => strtolower($marin->nid),
+            'stage_ids' => [$stage->id], 'role' => 'indifferent',
+        ])
+        ->assertHasActionErrors(['nid']);
+    $this->assertDatabaseCount('rh_marins', 1);
+    $this->assertDatabaseCount('instructeur_stage', 0);
+});

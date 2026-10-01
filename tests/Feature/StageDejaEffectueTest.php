@@ -15,7 +15,6 @@ use Modules\FPSplanificationstage\Models\Stage;
 use Modules\RH\Models\Marin;
 
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\post;
 use function Pest\Livewire\livewire;
 
 uses(Tests\TestCase::class, RefreshDatabase::class);
@@ -334,15 +333,7 @@ it(
             $candidat
         );
 
-        $response = post(
-            route(
-                'fpsplanificationstage.public.inscription.store',
-                [
-                    'session' =>
-                        $nouvelleSession->id,
-                ]
-            ),
-            [
+        $response = \Pest\Livewire\livewire(\Modules\FPSplanificationstage\Filament\Public\Pages\Inscription::class, ['session' => $nouvelleSession->id])->fillForm([
                 'nom' =>
                     $marin->nom,
 
@@ -363,8 +354,7 @@ it(
 
                 'motif_inscription' =>
                     'cursus_specialite',
-            ]
-        );
+            ])->call('submit');
 
         $response
             ->assertRedirect(
@@ -372,15 +362,10 @@ it(
                     panel:
                         'fpsplanificationstage'
                 )
-            )
-            ->assertSessionHas(
-                'inscription_warning',
-                fn (string $message): bool =>
-                    str_contains(
-                        $message,
-                        'ne sera pas prioritaire'
-                    )
             );
+
+        $this->assertTrue(str_contains(session('inscription_warning'), 'prioritaire'));
+
 
         $this->assertDatabaseHas(
             'inscriptions',

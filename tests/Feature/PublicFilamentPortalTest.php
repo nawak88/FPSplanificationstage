@@ -24,21 +24,7 @@ it('does not register a second public filament panel provider', function (): voi
 it('keeps html preparation out of controllers and generates panel urls', function (): void {
     $moduleRoot = dirname(__DIR__, 2);
 
-    foreach (
-        glob(
-            $moduleRoot
-            . '/app/Http/Controllers/*.php'
-        )
-        as $controller
-    ) {
-        $source = file_get_contents(
-            $controller
-        );
-
-        expect($source)
-            ->not->toContain('return view(')
-            ->not->toContain('Illuminate\\View\\View');
-    }
+    expect(glob($moduleRoot . '/app/Http/Controllers/*.php'))->toBe([]);
 
     foreach (
         [
@@ -134,18 +120,17 @@ it('supports several training needs in one public submission', function (): void
 
     $form = file_get_contents(
         $moduleRoot
-        . '/resources/views/filament/public/besoin-formation.blade.php'
+        . '/app/Filament/Public/Pages/BesoinNouveau.php'
     );
 
     $controller = file_get_contents(
         $moduleRoot
-        . '/app/Http/Controllers/PublicBesoinFormationController.php'
+        . '/app/Services/PublicBesoinFormationSubmissionService.php'
     );
 
     expect($form)
-        ->toContain('id="add-besoin-stage"')
-        ->toContain('name="besoins[')
-        ->toContain('besoin-stage-template');
+        ->toContain("Repeater::make('besoins')")
+        ->toContain('->maxItems(20)');
 
     expect($controller)
         ->toContain("'besoins' => [")
@@ -163,13 +148,13 @@ it('uses the three business planning modes without public priority', function ()
     $form =
         file_get_contents(
             $moduleRoot
-            . '/resources/views/filament/public/besoin-formation.blade.php'
+            . '/app/Filament/Public/Pages/BesoinNouveau.php'
         );
 
     $controller =
         file_get_contents(
             $moduleRoot
-            . '/app/Http/Controllers/PublicBesoinFormationController.php'
+            . '/app/Services/PublicBesoinFormationSubmissionService.php'
         );
 
     $bulkPlanner =
@@ -188,16 +173,9 @@ it('uses the three business planning modes without public priority', function ()
         ->toContain('Date de début imposée')
         ->toContain('Période disponible')
         ->toContain('Période de démarrage')
-        ->toContain('value="plage_demarrage"')
+        ->toContain("'plage_demarrage'")
         ->not->toContain('Priorité')
         ->not->toContain('[priorite]');
-
-    expect(
-        substr_count(
-            $form,
-            'data-period-type style="grid-column:1/-1;"'
-        )
-    )->toBe(2);
 
     expect($controller)
         ->toContain("'plage_demarrage'")

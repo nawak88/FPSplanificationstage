@@ -215,11 +215,15 @@ run_step \
 
             $kernel->bootstrap();
 
+            $resource = Modules\FPSplanificationstage\Filament\Resources\PortailFormations\PortailFormationResource::class;
+            $base = $resource::getRouteBaseName(
+                Filament\Facades\Filament::getPanel("fpsplanificationstage")
+            );
             $required = [
-                "fpsplanificationstage.public.inscription.store",
-                "fpsplanificationstage.public.besoin.store",
-                "fpsplanificationstage.public.besoin.suivi.rechercher",
-                "fpsplanificationstage.public.inscription.pdf",
+                $base . ".inscription",
+                $base . ".besoin",
+                $base . ".recherche-besoin",
+                $base . ".pdf",
             ];
 
             $routes = $app

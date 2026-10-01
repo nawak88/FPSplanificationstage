@@ -25,36 +25,19 @@ it('all migrated screens remain filament pages', function (): void {
     }
 });
 
-it('keeps action routes below the main planning path', function (): void {
+it('uses resource forms instead of HTTP submission routes', function (): void {
     foreach ([
-        'fpsplanificationstage.public.inscription.store'
-            => [
-                'apps/fpsplanificationstage/espace-stagiaire/planning-formations/sessions/{session}/inscription',
-                'POST',
-            ],
-
-        'fpsplanificationstage.public.besoin.store'
-            => [
-                'apps/fpsplanificationstage/espace-stagiaire/planning-formations/besoins/nouveau',
-                'POST',
-            ],
-
-        'fpsplanificationstage.public.besoin.suivi.rechercher'
-            => [
-                'apps/fpsplanificationstage/espace-stagiaire/planning-formations/besoins/suivi',
-                'POST',
-            ],
-
-        'fpsplanificationstage.public.inscription.pdf'
-            => [
-                'apps/fpsplanificationstage/espace-stagiaire/planning-formations/inscriptions/{code}/pdf',
-                'GET',
-            ],
-    ] as $name => [$expectedUri, $method]) {
-        $route = Route::getRoutes()->getByName($name);
-
-        expect($route)->not->toBeNull();
-        expect($route->uri())->toBe($expectedUri);
-        expect($route->methods())->toContain($method);
+        'fpsplanificationstage.public.inscription.store',
+        'fpsplanificationstage.public.besoin.store',
+        'fpsplanificationstage.public.besoin.suivi.rechercher',
+    ] as $name) {
+        expect(Route::getRoutes()->getByName($name))->toBeNull();
     }
+    $resource = \Modules\FPSplanificationstage\Filament\Resources\PortailFormations\PortailFormationResource::class;
+    foreach ([Inscription::class, BesoinNouveau::class, BesoinSuiviRecherche::class] as $page) {
+        expect($page::getResource())->toBe($resource);
+    }
+    $route = Route::getRoutes()->getByName($resource::getRouteBaseName(\Filament\Facades\Filament::getPanel('fpsplanificationstage')) . '.pdf');
+    expect($route)->not->toBeNull();
+    expect($route->methods())->toContain('GET');
 });

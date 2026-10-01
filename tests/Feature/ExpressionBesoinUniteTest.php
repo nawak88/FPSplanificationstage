@@ -14,7 +14,6 @@ use Modules\RH\Models\Unite;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
-use function Pest\Laravel\post;
 
 uses(Tests\TestCase::class, RefreshDatabase::class);
 uses()->group('FPSplanificationstage');
@@ -96,7 +95,7 @@ it(
         )
             ->assertSuccessful()
             ->assertSee(
-                'list="unites-demandeur"',
+                'data.demandeur',
                 false
             )
             ->assertSee(
@@ -205,12 +204,7 @@ it(
             ]],
         ];
 
-        post(
-            route(
-                'fpsplanificationstage.public.besoin.store'
-            ),
-            $payload
-        )->assertRedirect();
+        \Pest\Livewire\livewire(\Modules\FPSplanificationstage\Filament\Public\Pages\BesoinNouveau::class)->fillForm($payload)->call('submit')->assertRedirect();
 
         expect(
             BesoinFormation::query()
@@ -224,15 +218,8 @@ it(
         $payload['demandeur'] =
             'Unité absente du référentiel';
 
-        post(
-            route(
-                'fpsplanificationstage.public.besoin.store'
-            ),
-            $payload
-        )
-            ->assertSessionHasErrors(
-                'demandeur'
-            );
+        \Pest\Livewire\livewire(\Modules\FPSplanificationstage\Filament\Public\Pages\BesoinNouveau::class)->fillForm($payload)->call('submit')
+            ->assertHasFormErrors(['demandeur']);
 
         expect(
             BesoinFormation::query()

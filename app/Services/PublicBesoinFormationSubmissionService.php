@@ -1,10 +1,8 @@
 <?php
 
-namespace Modules\FPSplanificationstage\Http\Controllers;
+namespace Modules\FPSplanificationstage\Services;
 
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -12,43 +10,15 @@ use Illuminate\Validation\ValidationException;
 use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinConfirmation;
 use Modules\FPSplanificationstage\Filament\Public\Pages\BesoinSuivi;
 use Modules\FPSplanificationstage\Models\BesoinFormation;
-use Modules\FPSplanificationstage\Services\BesoinPeriodeService;
 use Modules\RH\Models\Unite;
 
-class PublicBesoinFormationController extends Controller
+class PublicBesoinFormationSubmissionService
 {
     public function store(
-        Request $request
-    ): RedirectResponse {
-        if (
-            ! $request->has('besoins')
-            && $request->has('stage_id')
-        ) {
-            $request->merge([
-                'besoins' => [[
-                    'stage_id' =>
-                        $request->input('stage_id'),
-
-                    'type_periode' =>
-                        $request->input('type_periode'),
-
-                    'date_debut_souhaitee' =>
-                        $request->input('date_debut_souhaitee'),
-
-                    'date_fin_souhaitee' =>
-                        $request->input('date_fin_souhaitee'),
-
-                    'nombre_stagiaires' =>
-                        $request->input('nombre_stagiaires'),
-
-                    'commentaire' =>
-                        $request->input('commentaire'),
-                ]],
-            ]);
-        }
-
+        array $data
+    ): string {
         $validated =
-            $request->validate(
+            Validator::make($data,
                 [
                     'demandeur' => [
                         'required',
@@ -134,7 +104,7 @@ class PublicBesoinFormationController extends Controller
                         'max:5000',
                     ],
                 ]
-            );
+            )->validate();
 
         foreach (
             $validated['besoins']
@@ -272,33 +242,19 @@ class PublicBesoinFormationController extends Controller
                 }
             );
 
-        $first =
-            $created[0];
+        session()->flash('besoins_crees', $created);
 
-        return redirect()
-            ->to(
-                BesoinConfirmation::getUrl(
-                    [
-                        'token' =>
-                            $first[
-                                'public_token'
-                            ],
-                    ],
-                    panel:
-                        'fpsplanificationstage'
-                )
-            )
-            ->with(
-                'besoins_crees',
-                $created
-            );
+        return BesoinConfirmation::getUrl(
+            ['token' => $created[0]['public_token']],
+            panel: 'fpsplanificationstage'
+        );
     }
 
     public function rechercherSuivi(
-        Request $request
-    ): RedirectResponse {
+        array $data
+    ): string {
         $validated =
-            $request->validate(
+            Validator::make($data,
                 [
                     'code_besoin' => [
                         'required',
@@ -312,7 +268,7 @@ class PublicBesoinFormationController extends Controller
                         'max:255',
                     ],
                 ]
-            );
+            )->validate();
 
         $code =
             mb_strtoupper(
@@ -356,15 +312,9 @@ class PublicBesoinFormationController extends Controller
             ]);
         }
 
-        return redirect()->to(
-            BesoinSuivi::getUrl(
-                [
-                    'token' =>
-                        $besoin->public_token,
-                ],
-                panel:
-                    'fpsplanificationstage'
-            )
+        return BesoinSuivi::getUrl(
+            ['token' => $besoin->public_token],
+            panel: 'fpsplanificationstage'
         );
     }
 }

@@ -85,15 +85,6 @@ class FilamentPanelProvider extends PanelProvider
                 for:
                     "$moduleNamespace\\Filament\\Pages"
             )
-            ->discoverPages(
-                in:
-                    module_path(
-                        $this->module,
-                        'app/Filament/Public/Pages'
-                    ),
-                for:
-                    "$moduleNamespace\\Filament\\Public\\Pages"
-            )
             ->discoverWidgets(
                 in:
                     module_path(

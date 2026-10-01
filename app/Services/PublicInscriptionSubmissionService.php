@@ -1,12 +1,11 @@
 <?php
 
-namespace Modules\FPSplanificationstage\Http\Controllers;
+namespace Modules\FPSplanificationstage\Services;
 
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Routing\Controller;
+use Filament\Facades\Filament;
+use Modules\FPSplanificationstage\Filament\Resources\PortailFormations\PortailFormationResource;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
@@ -15,21 +14,17 @@ use Modules\FPSplanificationstage\Filament\Pages\EspaceStagiaire\PlanningFormati
 use Modules\FPSplanificationstage\Models\Inscription;
 use Modules\FPSplanificationstage\Models\InscriptionPrerequis;
 use Modules\FPSplanificationstage\Models\SessionStage;
-use Modules\FPSplanificationstage\Services\CandidatureStageDejaEffectueNotifier;
-use Modules\FPSplanificationstage\Services\InscriptionPdfService;
-use Modules\FPSplanificationstage\Services\PublicInscriptionPageService;
-use Modules\FPSplanificationstage\Services\StagiaireResolver;
 use Modules\RH\Models\Brevet;
 use Modules\RH\Models\Grade;
 use Modules\RH\Models\Marin;
 use Modules\RH\Models\Specialite;
 
-class PublicInscriptionController extends Controller
+class PublicInscriptionSubmissionService
 {
     public function store(
-        Request $request,
+        array $data,
         SessionStage $session
-    ): RedirectResponse {
+    ): string {
         app(
             PublicInscriptionPageService::class
         )->ensureSessionIsRegistrable(
@@ -37,14 +32,14 @@ class PublicInscriptionController extends Controller
         );
 
         /** @var User $user */
-        $user = $request->user();
+        $user = auth()->user();
 
         abort_unless(
             $user,
             403
         );
 
-        $request->merge([
+        $data = array_merge($data, [
             'nom' =>
                 $user->nom,
 
@@ -69,7 +64,7 @@ class PublicInscriptionController extends Controller
         ]);
 
         $validated =
-            $request->validate([
+            Validator::make($data, [
 
                 /*
                  * INSCRIPTION_IDENTITE_V1_VALIDATION
@@ -164,7 +159,7 @@ class PublicInscriptionController extends Controller
                     'string',
                     'max:3000',
                 ],
-            ]);
+            ])->validate();
 
         $stagiaire =
             Marin::fromUser(
@@ -398,7 +393,7 @@ class PublicInscriptionController extends Controller
          * immédiatement avec le nouveau nombre
          * de places disponibles.
          */
-                /*
+        /*
          * PDF_CANDIDATURE_SIGNED_URL_V1
          *
          * Le PDF contient des données personnelles :
@@ -407,7 +402,7 @@ class PublicInscriptionController extends Controller
          */
         $pdfUrl =
             URL::temporarySignedRoute(
-                'fpsplanificationstage.public.inscription.pdf',
+                PortailFormationResource::getRouteBaseName(Filament::getPanel('fpsplanificationstage')) . '.pdf',
                 now()->addHour(),
                 [
                     'code' =>
@@ -416,96 +411,15 @@ class PublicInscriptionController extends Controller
                 ],
                 false
             );
-        $redirect =
-            redirect()->to(
-                PlanningFormations::getUrl(
-                    panel:
-                        'fpsplanificationstage'
-                )
-            )
-            ->with(
-                'inscription_success',
-                'Votre candidature a bien été enregistrée.'
-            )
-            ->with(
-                'inscription_code',
-                $inscription->code_inscription
-            )
-            ->with(
-                'inscription_pdf_url',
-                $pdfUrl
-            );
+        session()->flash('inscription_success', 'Votre candidature a bien été enregistrée.');
+        session()->flash('inscription_code', $inscription->code_inscription);
+        session()->flash('inscription_pdf_url', $pdfUrl);
 
-        if (
-            $inscription
-                ->stage_deja_effectue
-        ) {
-            app(
-                CandidatureStageDejaEffectueNotifier::class
-            )->notifier(
-                $inscription
-            );
-
-            $redirect->with(
-                'inscription_warning',
-                'Vous avez déjà effectué ce stage. Votre candidature est enregistrée, mais elle ne sera pas prioritaire.'
-            );
+        if ($inscription->stage_deja_effectue) {
+            app(CandidatureStageDejaEffectueNotifier::class)->notifier($inscription);
+            session()->flash('inscription_warning', 'Vous avez déjà effectué ce stage. Votre candidature est enregistrée, mais elle ne sera pas prioritaire.');
         }
 
-        return $redirect;
-    }
-
-    public function pdf(
-        Request $request,
-        string $code
-    ): Response {
-        if (
-            ! URL::hasValidSignature(
-                $request,
-                false
-            )
-        ) {
-            abort(403);
-        }
-
-        $inscription =
-            app(
-                PublicInscriptionPageService::class
-            )->findByCode(
-                $code
-            );
-
-        $pdf =
-            app(
-                InscriptionPdfService::class
-            )->render(
-                $inscription
-            );
-
-        $filename =
-            'candidature-stage-'
-            . $inscription
-                ->code_inscription
-            . '.pdf';
-
-        return response(
-            $pdf,
-            200,
-            [
-                'Content-Type' =>
-                    'application/pdf',
-
-                'Content-Disposition' =>
-                    'attachment; filename="'
-                    . $filename
-                    . '"',
-
-                'Cache-Control' =>
-                    'private, no-store, max-age=0',
-
-                'X-Content-Type-Options' =>
-                    'nosniff',
-            ]
-        );
+        return PlanningFormations::getUrl(panel: 'fpsplanificationstage');
     }
 }

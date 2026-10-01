@@ -4,6 +4,8 @@ namespace Modules\FPSplanificationstage\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\FPSplanificationstage\Models\Stage;
 use Modules\RH\Models\Marin;
@@ -14,10 +16,11 @@ class InstructeurManuelService
      * @param  array<int, int|string>  $stageIds
      */
     public function ajouter(
-        int $marinId,
+        ?int $marinId,
         array $stageIds,
         string $role = 'indifferent',
-        ?string $commentaire = null
+        ?string $commentaire = null,
+        ?array $nouveauMarin = null
     ): Marin {
         Gate::authorize(
             'fpsplanificationstage::gerer_le_module'
@@ -28,11 +31,9 @@ class InstructeurManuelService
                 $marinId,
                 $stageIds,
                 $role,
-                $commentaire
+                $commentaire,
+                $nouveauMarin
             ): Marin {
-                $instructeur = Marin::withoutGlobalScopes()
-                    ->findOrFail($marinId);
-
                 $stageIds = collect($stageIds)
                     ->map(
                         fn (int|string $stageId): int =>
@@ -67,6 +68,41 @@ class InstructeurManuelService
                         'stage_ids' =>
                             'Un des stages sélectionnés est introuvable.',
                     ]);
+                }
+
+                if ($nouveauMarin !== null) {
+                    $nouveauMarin = array_map(
+                        fn ($value) => is_string($value) ? trim($value) : $value,
+                        $nouveauMarin
+                    );
+                    $nouveauMarin['nid'] = mb_strtoupper($nouveauMarin['nid'] ?? '');
+
+                    $attributes = Validator::make($nouveauMarin, [
+                        'nom' => ['required', 'string', 'max:255'],
+                        'prenom' => ['required', 'string', 'max:255'],
+                        'nid' => ['required', 'string', 'max:15'],
+                    ])->validate();
+
+                    if (Marin::withoutGlobalScopes()
+                        ->whereRaw('UPPER(TRIM(nid)) = ?', [$attributes['nid']])
+                        ->exists()) {
+                        throw ValidationException::withMessages([
+                            'nid' => 'Ce NID existe déjà dans RH. Sélectionnez le marin existant.',
+                        ]);
+                    }
+
+                    $instructeur = Marin::create([
+                        ...$attributes,
+                        'uuid' => (string) Str::uuid(),
+                    ]);
+                } else {
+                    if ($marinId === null) {
+                        throw ValidationException::withMessages([
+                            'marin_id' => 'Sélectionnez un marin.',
+                        ]);
+                    }
+
+                    $instructeur = Marin::withoutGlobalScopes()->findOrFail($marinId);
                 }
 
                 foreach ($stages as $stage) {

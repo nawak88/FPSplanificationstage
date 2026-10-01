@@ -2,10 +2,18 @@
 
 namespace Modules\FPSplanificationstage\Filament\Public\Pages;
 
-use Filament\Pages\Page;
+use Filament\Resources\Pages\Page;
+use Modules\FPSplanificationstage\Filament\Resources\PortailFormations\PortailFormationResource;
 
 abstract class PublicPage extends Page
 {
+    protected static string $resource = PortailFormationResource::class;
+
+    public function getBreadcrumbs(): array
+    {
+        return [];
+    }
+
     protected static bool $shouldRegisterNavigation = false;
 
     /**
