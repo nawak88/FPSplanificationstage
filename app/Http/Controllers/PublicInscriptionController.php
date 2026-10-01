@@ -24,7 +24,7 @@ use Modules\RH\Models\Grade;
 use Modules\RH\Models\Marin;
 use Modules\RH\Models\Specialite;
 
-class PublicInscriptionController extends Controlle
+class PublicInscriptionController extends Controller
 {
     public function store(
         Request $request,
@@ -168,7 +168,7 @@ class PublicInscriptionController extends Controlle
 
         $stagiaire =
             Marin::fromUser(
-                $use
+                $user
             )
             ?? app(
                 StagiaireResolver::class

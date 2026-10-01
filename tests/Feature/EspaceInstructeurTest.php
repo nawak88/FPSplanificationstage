@@ -71,7 +71,7 @@ function creerSessionInstructeur(
     ]);
 
     $session->instructeurs()->attach(
-        $instructeu
+        $instructeur
     );
 
     return $session;
@@ -94,7 +94,7 @@ it(
 
         $user = User::factory()->create();
         $instructeur = creerMarinInstructeur(
-            $use
+            $user
         );
 
         actingAs($user);
@@ -110,7 +110,7 @@ it(
         )->assertForbidden();
 
         creerSessionInstructeur(
-            $instructeu
+            $instructeur
         );
 
         expect(

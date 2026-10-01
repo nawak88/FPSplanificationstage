@@ -17,7 +17,7 @@ class PublicInscriptionPageService
     /** @return array<string, mixed> */
     public function form(
         SessionStage $session,
-        User $use
+        User $user
     ): array {
         $this->ensureSessionIsRegistrable(
             $session
@@ -43,7 +43,7 @@ class PublicInscriptionPageService
 
             'identity' =>
                 $this->identityFor(
-                    $use
+                    $user
                 ),
 
             'grades' =>
@@ -129,11 +129,11 @@ class PublicInscriptionPageService
 
     /** @return array<string, ?string> */
     private function identityFor(
-        User $use
+        User $user
     ): array {
         $marin =
             Marin::fromUser(
-                $use
+                $user
             )
             ?? app(
                 StagiaireResolver::class
@@ -149,7 +149,7 @@ class PublicInscriptionPageService
             ]);
 
         $mindef =
-            $use
+            $user
                 ->getMindefConnectInformations();
 
         return [

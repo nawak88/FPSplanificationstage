@@ -35,7 +35,7 @@ class InstructeurResource extends Resource
 
     protected static ?int $navigationSort = 20;
 
-    public static function getEloquentQuery(): Builde
+    public static function getEloquentQuery(): Builder
     {
         return app(
             InstructeurConnecteService::class

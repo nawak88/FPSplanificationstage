@@ -37,7 +37,7 @@ class EspaceInstructeur extends BaseDashboard
         return app(
             InstructeurConnecteService::class
         )->peutAccederEspaceInstructeur(
-            $use
+            $user
         );
     }
 

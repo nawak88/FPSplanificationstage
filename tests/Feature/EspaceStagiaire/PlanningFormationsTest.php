@@ -1,6 +1,7 @@
 <?php
 
 use Filament\Facades\Filament;
+use Filament\PanelProvider;
 use Guava\Calendar\ValueObjects\FetchInfo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\FPSplanificationstage\Filament\Pages\Admission;
@@ -19,6 +20,7 @@ use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
 use Modules\FPSplanificationstage\Filament\Widgets\PlanningCalendar;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Models\Stage;
+use Modules\FPSplanificationstage\Providers\Filament\FilamentPanelProvider;
 
 uses(Tests\TestCase::class);
 uses(RefreshDatabase::class);
@@ -51,6 +53,14 @@ it('discovers every module page in the fpsplanificationstage panel', function ()
             BesoinConfirmation::class,
             BesoinSuivi::class,
         );
+});
+
+it('uses the native filament panel provider', function () {
+    $parent = (new ReflectionClass(
+        FilamentPanelProvider::class
+    ))->getParentClass();
+
+    expect($parent?->getName())->toBe(PanelProvider::class);
 });
 
 it('page uses native filament schema and guava calendar', function () {
