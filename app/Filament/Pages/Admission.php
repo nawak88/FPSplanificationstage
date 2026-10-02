@@ -14,7 +14,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
-use Modules\FPSplanificationstage\Filament\Concerns\RequiresAuthentication;
+use Illuminate\Support\Facades\Auth;
 use Modules\FPSplanificationstage\Models\AdmissionMessageTemplate;
 use Modules\FPSplanificationstage\Models\Inscription;
 use Modules\FPSplanificationstage\Models\SessionStage;
@@ -22,7 +22,6 @@ use Modules\FPSplanificationstage\Models\Stage;
 
 class Admission extends Page
 {
-    use RequiresAuthentication;
 
     protected static ?string $navigationLabel = 'Admission';
     protected static string|\UnitEnum|null $navigationGroup = 'Inscriptions / Admission';
@@ -43,6 +42,13 @@ class Admission extends Page
 
     /** @var array<int|string, string> */
     public array $candidateDecisions = [];
+
+    public static function canAccess(): bool
+    {
+        return Auth::check()
+            && auth()->user()->can("fpsplanificationstage::gerer_le_module")
+            && parent::canAccess();
+    }
 
     public function getTitle(): string
     {

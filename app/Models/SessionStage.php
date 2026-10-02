@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Models\User;
+use Modules\FPSplanificationstage\Models\Marin;
 
 class SessionStage extends Model
 {
@@ -70,7 +70,7 @@ class SessionStage extends Model
     public function instructeurs(): BelongsToMany
     {
         return $this->belongsToMany(
-            User::class,
+            Marin::class,
             'instructeur_session_stage',
             'session_stage_id',
             'instructeur_id'

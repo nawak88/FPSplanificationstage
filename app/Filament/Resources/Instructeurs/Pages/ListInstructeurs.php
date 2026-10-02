@@ -6,6 +6,9 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Storage;
@@ -14,7 +17,7 @@ use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\InstructeurRes
 use Modules\FPSplanificationstage\Models\Stage;
 use Modules\FPSplanificationstage\Services\InstructeurManuelService;
 use Modules\FPSplanificationstage\Services\InstructeurStageImporter;
-use App\Models\User;
+use Modules\FPSplanificationstage\Models\Marin;
 use Throwable;
 
 class ListInstructeurs extends ListRecords
@@ -36,16 +39,58 @@ class ListInstructeurs extends ListRecords
                 )
                 ->modalHeading('Ajouter un instructeur manuellement')
                 ->modalDescription(
-                    'Sélectionnez un utilisateur de l’application et, si nécessaire, ses stages enseignés.'
+                    'Sélectionnez un marin existant ou créez sa fiche RH, puis choisissez ses stages.'
                 )
                 ->modalSubmitActionLabel('Ajouter')
                 ->schema([
-                    Select::make('user_id')->label('Utilisateur')
-                        ->options(fn (): array => User::query()->orderBy('nom')->orderBy('prenom')->get()
-                            ->mapWithKeys(fn (User $user): array => [
-                                $user->getKey() => trim($user->nom . ' ' . $user->prenom) . ' — ' . $user->email,
-                            ])->all())
-                        ->searchable()->preload()->required(),
+                    Toggle::make('nouveau_marin')
+                        ->label('Marin absent de RH')
+                        ->helperText('Une fiche marin sera créée dans RH lors de l’ajout de l’instructeur.')
+                        ->default(false)
+                        ->live(),
+                    Select::make('marin_id')
+                        ->label('Marin')
+                        ->options(
+                            fn (): array => Marin::withoutGlobalScopes()
+                                ->orderBy('nom')
+                                ->orderBy('prenom')
+                                ->get()
+                                ->mapWithKeys(
+                                    fn (Marin $marin): array => [
+                                        $marin->getKey() => trim(
+                                            mb_strtoupper($marin->nom)
+                                            . ' '
+                                            . $marin->prenom
+                                        )
+                                        . ($marin->matricule
+                                            ? ' — ' . $marin->matricule
+                                            : '')
+                                        . ($marin->nid
+                                            ? ' — NID ' . $marin->nid
+                                            : ''),
+                                    ]
+                                )
+                                ->all()
+                        )
+                        ->searchable()
+                        ->preload()
+                        ->visible(fn (Get $get): bool => ! $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => ! $get('nouveau_marin')),
+                    TextInput::make('nom')
+                        ->label('Nom')
+                        ->maxLength(255)
+                        ->visible(fn (Get $get): bool => (bool) $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => (bool) $get('nouveau_marin')),
+                    TextInput::make('prenom')
+                        ->label('Prénom')
+                        ->maxLength(255)
+                        ->visible(fn (Get $get): bool => (bool) $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => (bool) $get('nouveau_marin')),
+                    TextInput::make('nid')
+                        ->label('NID')
+                        ->maxLength(15)
+                        ->visible(fn (Get $get): bool => (bool) $get('nouveau_marin'))
+                        ->required(fn (Get $get): bool => (bool) $get('nouveau_marin')),
                     Select::make('stage_ids')
                         ->label('Stages enseignés')
                         ->options(
@@ -66,7 +111,8 @@ class ListInstructeurs extends ListRecords
                         )
                         ->multiple()
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->required(),
                     Select::make('role')
                         ->label('Rôle')
                         ->options([
@@ -85,10 +131,13 @@ class ListInstructeurs extends ListRecords
                         $instructeur = app(
                             InstructeurManuelService::class
                         )->ajouter(
-                            filled($data['user_id'] ?? null) ? (int) $data['user_id'] : null,
+                            filled($data['marin_id'] ?? null) ? (int) $data['marin_id'] : null,
                             $data['stage_ids'],
                             $data['role'],
-                            $data['commentaire'] ?? null
+                            $data['commentaire'] ?? null,
+                            ($data['nouveau_marin'] ?? false)
+                                ? array_intersect_key($data, array_flip(['nom', 'prenom', 'nid']))
+                                : null
                         );
 
                     } catch (ValidationException $exception) {

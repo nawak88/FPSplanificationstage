@@ -5,7 +5,7 @@ namespace Modules\FPSplanificationstage\Services;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use Modules\RH\Models\Marin;
+use Modules\FPSplanificationstage\Models\Marin;
 
 class InstructeurConnecteService
 {
@@ -18,30 +18,25 @@ class InstructeurConnecteService
             return null;
         }
 
-        return Marin::fromUser($user)
-            ?? app(StagiaireResolver::class)->find([
-                'nom' => $user->nom,
-                'prenom' => $user->prenom,
-                'email' => $user->email,
-            ]);
+        $marin = Marin::fromUser($user);
+
+        if ($marin) {
+            return $marin;
+        }
+
+        $marin = app(StagiaireResolver::class)->find([
+            'nom' => $user->nom,
+            'prenom' => $user->prenom,
+            'email' => $user->email,
+        ]);
+
+        return $marin ? Marin::withoutGlobalScopes()->find($marin->getKey()) : null;
     }
 
     public function peutAccederEspaceInstructeur(
         ?User $user = null
     ): bool {
-        $instructeur = $this->resolve($user);
-
-        if (! $instructeur instanceof Marin) {
-            return false;
-        }
-
-        return $this->seulementInstructeurs(
-            Marin::withoutGlobalScopes()
-        )
-            ->whereKey(
-                $instructeur->getKey()
-            )
-            ->exists();
+        return Marin::utilisateurEstInstructeur($user ?? auth()->user());
     }
 
     public function seulementInstructeurs(

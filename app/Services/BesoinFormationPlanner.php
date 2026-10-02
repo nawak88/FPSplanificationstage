@@ -125,7 +125,7 @@ class BesoinFormationPlanner
                             true
                         )
                         ->pluck(
-                            'users.id'
+                            'rh_marins.id'
                         )
                         ->map(
                             fn ($id): int =>

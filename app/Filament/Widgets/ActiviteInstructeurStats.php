@@ -29,7 +29,7 @@ class ActiviteInstructeurStats extends StatsOverviewWidget
                 fn ($query) => $query
                     ->withoutGlobalScopes()
                     ->where(
-                        'users.id',
+                        'rh_marins.id',
                         $instructeur->getKey()
                     )
             )
@@ -54,7 +54,7 @@ class ActiviteInstructeurStats extends StatsOverviewWidget
                             $instructeurQuery
                                 ->withoutGlobalScopes()
                                 ->where(
-                                    'users.id',
+                                    'rh_marins.id',
                                     $instructeur->getKey()
                                 )
                     )

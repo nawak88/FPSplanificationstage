@@ -4,7 +4,7 @@ namespace Modules\FPSplanificationstage\Services;
 
 use Illuminate\Support\Str;
 use Modules\FPSplanificationstage\Models\IndisponibiliteInstructeur;
-use App\Models\User;
+use Modules\FPSplanificationstage\Models\Marin;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use RuntimeException;
@@ -66,7 +66,7 @@ class IndisponibiliteInstructeurImporter
                     $prenom
                 );
 
-                if (! $instructeur instanceof User) {
+                if (! $instructeur instanceof Marin) {
                     throw new RuntimeException(
                         'Instructeur introuvable ou ambigu.'
                     );
@@ -218,9 +218,9 @@ class IndisponibiliteInstructeurImporter
         ?string $identifiant,
         ?string $nom,
         ?string $prenom
-    ): User|false|null {
+    ): Marin|false|null {
         if ($identifiant !== null) {
-            $matches = User::withoutGlobalScopes()
+            $matches = Marin::withoutGlobalScopes()
                 ->whereRaw(
                     'UPPER(TRIM(matricule)) = ?',
                     [mb_strtoupper($identifiant)]
@@ -237,7 +237,7 @@ class IndisponibiliteInstructeurImporter
         }
 
         if ($nom !== null && $prenom !== null) {
-            $matches = User::withoutGlobalScopes()
+            $matches = Marin::withoutGlobalScopes()
                 ->whereRaw(
                     'UPPER(TRIM(nom)) = ?',
                     [mb_strtoupper($nom)]

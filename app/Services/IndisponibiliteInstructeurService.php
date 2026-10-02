@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Modules\FPSplanificationstage\Models\IndisponibiliteInstructeur;
 use Modules\FPSplanificationstage\Models\SessionStage;
-use App\Models\User;
+use Modules\FPSplanificationstage\Models\Marin;
 
 class IndisponibiliteInstructeurService
 {
@@ -22,7 +22,7 @@ class IndisponibiliteInstructeurService
      * @return array{indisponibilite: IndisponibiliteInstructeur, conflits: Collection<int, SessionStage>}
      */
     public function creer(
-        User $instructeur,
+        Marin $instructeur,
         array $data
     ): array {
         $data = Validator::make(
@@ -106,7 +106,7 @@ class IndisponibiliteInstructeurService
                 fn ($query) => $query
                     ->withoutGlobalScopes()
                     ->where(
-                        'users.id',
+                        'rh_marins.id',
                         $indisponibilite->instructeur_id
                     )
             )

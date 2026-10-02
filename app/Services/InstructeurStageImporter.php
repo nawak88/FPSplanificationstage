@@ -5,7 +5,7 @@ namespace Modules\FPSplanificationstage\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\FPSplanificationstage\Models\Stage;
-use Modules\RH\Models\Marin;
+use Modules\FPSplanificationstage\Models\Marin;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use RuntimeException;
 use Throwable;
