@@ -180,6 +180,9 @@ it(
             ->format('Y-m-d');
 
         $payload = [
+            'type_periode' => 'plage',
+            'date_debut_souhaitee' => $date,
+            'date_fin_souhaitee' => $date,
             'demandeur' =>
                 $unite->libelle_long,
 

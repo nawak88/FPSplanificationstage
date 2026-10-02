@@ -15,7 +15,7 @@ use Modules\FPSplanificationstage\Filament\Widgets\SessionStageCalendar;
 use Modules\FPSplanificationstage\Models\Salle;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Models\Stage;
-use Modules\RH\Models\Marin;
+use App\Models\User;
 
 class PlanningSessionStages extends Page
 {
@@ -161,9 +161,9 @@ class PlanningSessionStages extends Page
 
     private function instructorOptions(): array
     {
-        return Marin::query()
+        return User::query()
             ->whereIn(
-                'rh_marins.id',
+                'users.id',
                 SessionStage::query()
                     ->join(
                         'instructeur_session_stage',
@@ -176,7 +176,7 @@ class PlanningSessionStages extends Page
             ->orderBy('nom')
             ->orderBy('prenom')
             ->get()
-            ->mapWithKeys(fn (Marin $marin): array => [
+            ->mapWithKeys(fn (User $marin): array => [
                 $marin->getKey() => trim(
                     mb_strtoupper($marin->nom) . ' ' . $marin->prenom
                 ),

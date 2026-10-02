@@ -138,7 +138,7 @@ it('supports several training needs in one public submission', function (): void
         ->toContain("\$validated['besoins']");
 });
 
-it('uses the three business planning modes without public priority', function (): void {
+it('uses a shared availability period without public priority', function (): void {
     $moduleRoot =
         dirname(
             __DIR__,
@@ -170,10 +170,8 @@ it('uses the three business planning modes without public priority', function ()
         );
 
     expect($form)
-        ->toContain('Date de début imposée')
-        ->toContain('Période disponible')
-        ->toContain('Période de démarrage')
-        ->toContain("'plage_demarrage'")
+        ->toContain('Période de disponibilité')
+        ->toContain('Période d’indisponibilité')
         ->not->toContain('Priorité')
         ->not->toContain('[priorite]');
 

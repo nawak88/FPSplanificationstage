@@ -15,6 +15,12 @@
         <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;">
             <div><strong>Stage</strong><br>{{ $besoin->stage?->libelle_court ?? 'Non renseigné' }}</div>
             <div><strong>Demandeur</strong><br>{{ $besoin->demandeur }}</div>
+            <div><strong>Période du demandeur</strong><br>{{ match ($besoin->type_periode) {
+                'plage' => 'Période de disponibilité',
+                'indisponibilite' => 'Période d’indisponibilité',
+                'plage_demarrage' => 'Période de démarrage',
+                default => 'Date de début imposée',
+            } }}</div>
             <div><strong>Début souhaité</strong><br>{{ optional($besoin->date_debut_souhaitee)->format('d/m/Y') ?? $besoin->date_debut_souhaitee }}</div>
             <div><strong>Fin souhaitée</strong><br>{{ optional($besoin->date_fin_souhaitee)->format('d/m/Y') ?? $besoin->date_fin_souhaitee ?? 'Non renseignée' }}</div>
             <div><strong>Effectif</strong><br>{{ $besoin->nombre_stagiaires }}</div>

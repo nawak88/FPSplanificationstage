@@ -21,7 +21,7 @@ use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Models\Stage;
 use Modules\FPSplanificationstage\Services\SessionStageAlternativeFinder;
 use Modules\FPSplanificationstage\Services\SessionStageConflictDetector;
-use Modules\RH\Models\Marin;
+use App\Models\User;
 
 class SessionStageForm
 {
@@ -184,7 +184,7 @@ class SessionStageForm
                                                 true
                                             )
                                             ->pluck(
-                                                'rh_marins.id'
+                                                'users.id'
                                             )
                                             ->all();
 
@@ -333,7 +333,7 @@ class SessionStageForm
                             ->multiple()
                             ->getOptionLabelFromRecordUsing(
                                 fn (
-                                    Marin $record
+                                    User $record
                                 ): string =>
                                     trim(
                                         mb_strtoupper(

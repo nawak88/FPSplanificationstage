@@ -12,14 +12,14 @@ use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Pages\ViewInst
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Schemas\InstructeurInfolist;
 use Modules\FPSplanificationstage\Filament\Resources\Instructeurs\Tables\InstructeursTable;
 use Modules\FPSplanificationstage\Services\InstructeurConnecteService;
-use Modules\RH\Models\Marin;
+use App\Models\User;
 
 class InstructeurResource extends Resource
 {
     use RequiresAuthentication;
 
     protected static ?string $model =
-        Marin::class;
+        User::class;
 
     protected static ?string $navigationLabel =
         'Instructeurs';

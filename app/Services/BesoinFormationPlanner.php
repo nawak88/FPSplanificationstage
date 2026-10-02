@@ -125,7 +125,7 @@ class BesoinFormationPlanner
                             true
                         )
                         ->pluck(
-                            'rh_marins.id'
+                            'users.id'
                         )
                         ->map(
                             fn ($id): int =>
@@ -173,7 +173,7 @@ class BesoinFormationPlanner
 
                 if (
                     $besoin->type_periode
-                    === 'plage'
+                    === 'plage' || $besoin->type_periode === BesoinPeriodeService::TYPE_INDISPONIBILITE
                 ) {
                     return $this
                         ->planDateRange(
@@ -311,6 +311,10 @@ class BesoinFormationPlanner
                     ->date_fin_souhaitee
             )->endOfDay();
 
+        if ($besoin->type_periode === BesoinPeriodeService::TYPE_INDISPONIBILITE) {
+            [$rangeStart, $rangeEnd] = BesoinPeriodeService::unavailableSearchBounds($besoin);
+        }
+
         if (
             $rangeEnd->lt(
                 $rangeStart
@@ -375,6 +379,12 @@ class BesoinFormationPlanner
                 )
             ) {
                 break;
+            }
+
+            if ($besoin->type_periode === BesoinPeriodeService::TYPE_INDISPONIBILITE
+                && !BesoinPeriodeService::avoidsUnavailablePeriod($besoin, $debut, $fin)) {
+                $candidateDate->addDay();
+                continue;
             }
 
             $result =

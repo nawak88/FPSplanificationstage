@@ -461,7 +461,7 @@ class BesoinFormationGroupedPlanner
                     true
                 )
                 ->pluck(
-                    'rh_marins.id'
+                    'users.id'
                 )
                 ->map(
                     fn ($id): int =>
@@ -829,6 +829,16 @@ class BesoinFormationGroupedPlanner
                 continue;
             }
 
+            if ($besoin->type_periode === BesoinPeriodeService::TYPE_INDISPONIBILITE) {
+                if ($besoin->date_fin_souhaitee) {
+                    [$start, $end] = BesoinPeriodeService::unavailableSearchBounds($besoin);
+                    $starts[] = $start;
+                    $ends[] = $end;
+                }
+
+                continue;
+            }
+
             $start = Carbon::parse($besoin->date_debut_souhaitee)->startOfDay();
             $starts[] = $start;
 
@@ -967,6 +977,10 @@ class BesoinFormationGroupedPlanner
 
                     if ($besoin->type_periode === 'dates_fixes') {
                         return $debut->isSameDay($souhaitee);
+                    }
+
+                    if ($besoin->type_periode === BesoinPeriodeService::TYPE_INDISPONIBILITE) {
+                        return BesoinPeriodeService::avoidsUnavailablePeriod($besoin, $debut, $fin);
                     }
 
                     if (

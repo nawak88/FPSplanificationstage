@@ -121,7 +121,7 @@ class SessionsInstructeurTable extends TableWidget
                         $instructeurQuery
                             ->withoutGlobalScopes()
                             ->where(
-                                'rh_marins.id',
+                                'users.id',
                                 $instructeur->getKey()
                             )
                 ),

@@ -66,7 +66,7 @@ class CalendrierInstructeur extends CalendarWidget
                 fn ($query) => $query
                     ->withoutGlobalScopes()
                     ->where(
-                        'rh_marins.id',
+                        'users.id',
                         $instructeur->getKey()
                     )
             )

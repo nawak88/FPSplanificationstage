@@ -46,6 +46,9 @@ it('enregistre plusieurs besoins depuis le formulaire de la ressource', function
         'nombre_stagiaires' => 2,
     ];
     livewire(BesoinNouveau::class)->fillForm([
+        'type_periode' => 'plage',
+        'date_debut_souhaitee' => $besoin['date_debut_souhaitee'],
+        'date_fin_souhaitee' => $besoin['date_debut_souhaitee'],
         'demandeur' => $unite->libelle_long, 'contact_nom' => 'Contact',
         'contact_email' => 'contact@example.test', 'besoins' => [$besoin, $besoin],
     ])->call('submit')->assertHasNoFormErrors()->assertRedirect();

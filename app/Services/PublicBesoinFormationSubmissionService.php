@@ -17,6 +17,24 @@ class PublicBesoinFormationSubmissionService
     public function store(
         array $data
     ): string {
+        // The requester's period applies to every training need, including
+        // newly added stages. Per-stage values must not override it.
+        if (array_key_exists('type_periode', $data)) {
+            Validator::make($data, [
+                'type_periode' => ['required', Rule::in(['plage', 'indisponibilite'])],
+                'date_debut_souhaitee' => ['required', 'date', 'after_or_equal:today'],
+                'date_fin_souhaitee' => ['required', 'date', 'after_or_equal:date_debut_souhaitee'],
+            ])->validate();
+
+            foreach ($data['besoins'] ?? [] as $index => $besoin) {
+                $data['besoins'][$index] = array_replace($besoin, [
+                    'type_periode' => $data['type_periode'],
+                    'date_debut_souhaitee' => $data['date_debut_souhaitee'],
+                    'date_fin_souhaitee' => $data['date_fin_souhaitee'],
+                ]);
+            }
+        }
+
         $validated =
             Validator::make($data,
                 [
@@ -77,6 +95,7 @@ class PublicBesoinFormationSubmissionService
                             'dates_fixes',
                             'plage',
                             'plage_demarrage',
+                            'indisponibilite',
                         ]),
                     ],
 

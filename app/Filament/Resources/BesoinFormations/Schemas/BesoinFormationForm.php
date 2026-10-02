@@ -179,6 +179,7 @@ class BesoinFormationForm
 
                                 'plage_demarrage' =>
                                     'Période de démarrage',
+                                'indisponibilite' => 'Période d’indisponibilité',
                             ])
                             ->default('dates_fixes')
                             ->required()
@@ -211,6 +212,7 @@ class BesoinFormationForm
                                         [
                                             'plage',
                                             'plage_demarrage',
+                                            'indisponibilite',
                                         ],
                                         true
                                     )

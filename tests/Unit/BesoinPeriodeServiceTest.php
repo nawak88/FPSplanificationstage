@@ -4,11 +4,12 @@ use Modules\FPSplanificationstage\Services\BesoinPeriodeService;
 
 uses()->group('FPSplanificationstage');
 
-it('allowed types are exactly the three supported modes', function () {
+it('allows the supported planning modes', function () {
     expect(BesoinPeriodeService::allowedTypes())->toBe([
         BesoinPeriodeService::TYPE_DATE_FIXE,
         BesoinPeriodeService::TYPE_PLAGE_DISPONIBILITE,
         BesoinPeriodeService::TYPE_PLAGE_DEMARRAGE,
+        BesoinPeriodeService::TYPE_INDISPONIBILITE,
     ]);
 });
 
@@ -19,6 +20,7 @@ it('detects range mode', function (?string $type, bool $expected) {
     'plage disponibilité' => [BesoinPeriodeService::TYPE_PLAGE_DISPONIBILITE, true],
     'plage démarrage' => [BesoinPeriodeService::TYPE_PLAGE_DEMARRAGE, true],
     'null' => [null, false],
+    'indisponibilité' => [BesoinPeriodeService::TYPE_INDISPONIBILITE, true],
     'type inconnu' => ['inconnu', false],
 ]);
 

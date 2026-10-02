@@ -11,6 +11,7 @@ class BesoinPeriodeService
     public const TYPE_DATE_FIXE = 'dates_fixes';
     public const TYPE_PLAGE_DISPONIBILITE = 'plage';
     public const TYPE_PLAGE_DEMARRAGE = 'plage_demarrage';
+    public const TYPE_INDISPONIBILITE = 'indisponibilite';
 
     public static function allowedTypes(): array
     {
@@ -18,6 +19,7 @@ class BesoinPeriodeService
             self::TYPE_DATE_FIXE,
             self::TYPE_PLAGE_DISPONIBILITE,
             self::TYPE_PLAGE_DEMARRAGE,
+            self::TYPE_INDISPONIBILITE,
         ];
     }
 
@@ -28,6 +30,7 @@ class BesoinPeriodeService
             [
                 self::TYPE_PLAGE_DISPONIBILITE,
                 self::TYPE_PLAGE_DEMARRAGE,
+                self::TYPE_INDISPONIBILITE,
             ],
             true
         );
@@ -46,6 +49,26 @@ class BesoinPeriodeService
          * occupe donc 3 dates ouvrées (la dernière étant une demi-journée).
          */
         return max(1, (int) ceil($value));
+    }
+
+    /** Search future dates on either side of an unavailable period. */
+    public static function unavailableSearchBounds(BesoinFormation $besoin): array
+    {
+        $start = Carbon::today();
+        $end = Carbon::parse($besoin->date_fin_souhaitee)->max($start)->copy()->addYear()->endOfDay();
+
+        return [$start, $end];
+    }
+
+    public static function avoidsUnavailablePeriod(BesoinFormation $besoin, Carbon $start, Carbon $end): bool
+    {
+        if (!$besoin->date_debut_souhaitee || !$besoin->date_fin_souhaitee) {
+            return false;
+        }
+
+        return $start->gte(Carbon::today())
+            && ($end->lt(Carbon::parse($besoin->date_debut_souhaitee)->startOfDay())
+                || $start->gt(Carbon::parse($besoin->date_fin_souhaitee)->endOfDay()));
     }
 
     public static function countWorkingDays(mixed $start, mixed $end): int
@@ -124,6 +147,9 @@ class BesoinPeriodeService
         int|string|null $stageId,
         ?string $type
     ): string {
+        if ($type === self::TYPE_INDISPONIBILITE) {
+            return 'Le stage doit être entièrement réalisé en dehors de la période d’indisponibilité.';
+        }
         if (! $stageId) {
             return 'Sélectionnez d’abord un stage pour connaître sa durée.';
         }

@@ -85,6 +85,7 @@ class BesoinFormationsTable
 
                                 'plage_demarrage' =>
                                     'Plage de démarrage',
+                                'indisponibilite' => 'Période d’indisponibilité',
 
                                 default =>
                                     $state ?? '—',
