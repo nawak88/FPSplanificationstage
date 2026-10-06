@@ -22,13 +22,13 @@ class InstructeurResource extends Resource
         Marin::class;
 
     protected static ?string $navigationLabel =
-        'Instructeurs';
+        'Formateurs';
 
     protected static ?string $modelLabel =
-        'instructeur';
+        'formateur';
 
     protected static ?string $pluralModelLabel =
-        'instructeurs';
+        'formateurs';
 
     protected static string|\UnitEnum|null $navigationGroup =
         'Référentiels';

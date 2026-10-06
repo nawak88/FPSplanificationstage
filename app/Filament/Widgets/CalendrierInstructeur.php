@@ -16,7 +16,7 @@ use Guava\Calendar\ValueObjects\DateSelectInfo;
 use Guava\Calendar\ValueObjects\EventClickInfo;
 use Guava\Calendar\ValueObjects\FetchInfo;
 use Illuminate\Database\Eloquent\Model;
-use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
+use Modules\FPSplanificationstage\Filament\Pages\SessionInstructeurDetail;
 use Modules\FPSplanificationstage\Models\IndisponibiliteInstructeur;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Services\IndisponibiliteInstructeurService;
@@ -396,7 +396,7 @@ class CalendrierInstructeur extends CalendarWidget
 
         if ($event instanceof SessionStage) {
             $this->redirect(
-                SessionDetail::getUrl(
+                SessionInstructeurDetail::getUrl(
                     ['session' => $event->getKey()],
                     panel: 'fpsplanificationstage'
                 )

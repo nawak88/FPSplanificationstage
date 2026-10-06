@@ -114,7 +114,7 @@ class BesoinFormationPlanner
 
 
                 /*
-                 * Instructeurs actifs
+                 * Formateurs actifs
                  * associés au stage.
                  */
                 $instructeurIds =
@@ -140,7 +140,7 @@ class BesoinFormationPlanner
                     return $this->failure(
                         $besoin,
                         [
-                            'Aucun instructeur actif n’est associé à ce stage.',
+                            'Aucun formateur actif n’est associé à ce stage.',
                         ]
                     );
                 }
@@ -986,7 +986,7 @@ class BesoinFormationPlanner
         /*
          * Priorité 2 :
          * salle préférentielle
-         * d'un instructeur.
+         * d'un formateur.
          */
         if (
             in_array(

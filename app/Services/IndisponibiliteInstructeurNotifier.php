@@ -99,7 +99,7 @@ class IndisponibiliteInstructeurNotifier
                 . '.';
 
         Notification::make()
-            ->title('Nouvelle indisponibilité instructeur')
+            ->title('Nouvelle indisponibilité formateur')
             ->body(
                 $nom
                 . ' a déclaré une indisponibilité du '

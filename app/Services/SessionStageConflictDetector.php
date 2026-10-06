@@ -183,7 +183,7 @@ class SessionStageConflictDetector
 
             if (! $instructeur) {
                 $conflits[] =
-                    "L’instructeur #{$instructeurId} est introuvable.";
+                    "L’formateur #{$instructeurId} est introuvable.";
 
                 continue;
             }
@@ -196,7 +196,7 @@ class SessionStageConflictDetector
 
             /*
              * Recherche d'une autre session
-             * utilisant déjà cet instructeur.
+             * utilisant déjà ce formateur.
              */
             $query = SessionStage::query()
                 ->with('stage')
@@ -251,7 +251,7 @@ class SessionStageConflictDetector
 
             /*
              * Recherche des indisponibilités
-             * déclarées pour cet instructeur.
+             * déclarées pour ce formateur.
              */
             $indisponibilites =
                 IndisponibiliteInstructeur::query()

@@ -40,7 +40,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            // Un instructeur ne doit apparaître qu'une fois
+            // Un formateur ne doit apparaître qu'une fois
             // pour un même stage.
             $table->unique(
                 ['instructeur_id', 'stage_id'],

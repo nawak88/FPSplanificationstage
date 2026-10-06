@@ -6,7 +6,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
-use Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail;
+use Modules\FPSplanificationstage\Filament\Pages\SessionInstructeurDetail;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Services\InstructeurConnecteService;
 
@@ -17,7 +17,7 @@ class SessionsInstructeurTable extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Mes prochaines sessions et leurs stagiaires')
+            ->heading('Mes sessions et leurs stagiaires')
             ->description(
                 'Les candidatures refusées ou annulées ne sont pas affichées.'
             )
@@ -72,6 +72,7 @@ class SessionsInstructeurTable extends TableWidget
                             match ($state) {
                                 'planifiee' => 'Planifiée',
                                 'confirmee' => 'Confirmée',
+                                'terminee' => 'Terminée',
                                 default => $state ?? '—',
                             }
                     )
@@ -82,15 +83,15 @@ class SessionsInstructeurTable extends TableWidget
                                 : 'info'
                     ),
             ])
-            ->defaultSort('debut')
+            ->defaultSort('debut', 'desc')
             ->recordUrl(
                 fn (SessionStage $record): string =>
-                    SessionDetail::getUrl(
+                    SessionInstructeurDetail::getUrl(
                         ['session' => $record->getKey()],
                         panel: 'fpsplanificationstage'
                     )
             )
-            ->emptyStateHeading('Aucune session à venir')
+            ->emptyStateHeading('Aucune session affectée')
             ->paginated([5, 10, 25]);
     }
 
@@ -129,8 +130,7 @@ class SessionsInstructeurTable extends TableWidget
             )
             ->whereIn(
                 'statut',
-                ['planifiee', 'confirmee']
-            )
-            ->where('fin', '>=', now());
+                ['planifiee', 'confirmee', 'terminee']
+            );
     }
 }

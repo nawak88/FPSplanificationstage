@@ -68,7 +68,7 @@ class SessionStagesTable
                     'instructeurs.nom'
                 )
                     ->label(
-                        'Instructeurs'
+                        'Formateurs'
                     )
                     ->listWithLineBreaks()
                     ->limitList(3),
@@ -234,7 +234,7 @@ class SessionStagesTable
                         'Déplacer la session'
                     )
                     ->modalDescription(
-                        'La session conserve son numéro, ses stagiaires, sa salle et ses instructeurs. '
+                        'La session conserve son numéro, ses stagiaires, sa salle et ses formateurs. '
                         . 'La durée et les horaires sont conservés. '
                         . 'Les samedis et dimanches sont ignorés. '
                         . 'Tous les conflits seront contrôlés avant validation.'
@@ -261,7 +261,7 @@ class SessionStagesTable
                             )
                             ->options([
                                 'instructeur_indisponible' =>
-                                    'Instructeur indisponible',
+                                    'Formateur indisponible',
 
                                 'salle_indisponible' =>
                                     'Salle indisponible',
@@ -409,7 +409,7 @@ class SessionStagesTable
                                     'Décision du service',
 
                                 'instructeur_indisponible' =>
-                                    'Instructeur indisponible',
+                                    'Formateur indisponible',
 
                                 'autre' =>
                                     'Autre',

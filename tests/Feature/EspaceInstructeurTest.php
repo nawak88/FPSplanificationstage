@@ -46,7 +46,7 @@ function creerMarinInstructeur(
 
 function creerSessionInstructeur(
     Marin $instructeur,
-    string $libelle = 'Formation instructeur',
+    string $libelle = 'Formation formateur',
     int $jours = 10
 ): SessionStage {
     $stage = Stage::create([
@@ -78,7 +78,7 @@ function creerSessionInstructeur(
 }
 
 it(
-    'ouvre l espace uniquement au marin renseigne comme instructeur',
+    'ouvre l espace uniquement au marin renseigne comme formateur',
     function (): void {
         expect(
             EspaceInstructeur::canAccess()
@@ -123,13 +123,13 @@ it(
             )
         )
             ->assertSuccessful()
-            ->assertSee('Mon espace instructeur')
+            ->assertSee('Mon espace formateur')
             ->assertSee('Mon activité');
     }
 );
 
 it(
-    'ne donne pas l espace instructeur au superadministrateur non instructeur',
+    'ne donne pas l espace formateur au superadministrateur non formateur',
     function (): void {
         $admin = User::factory()->create([
             'admin' => true,
@@ -282,7 +282,7 @@ it(
 
         expect($notification->data['title'])
             ->toBe(
-                'Nouvelle indisponibilité instructeur'
+                'Nouvelle indisponibilité formateur'
             )
             ->and($notification->data['body'])
             ->toContain('Formation en conflit')
@@ -291,7 +291,7 @@ it(
 );
 
 it(
-    'ne montre dans le calendrier que les sessions et indisponibilites de l instructeur connecte',
+    'ne montre dans le calendrier que les sessions et indisponibilites du formateur connecte',
     function (): void {
         $user = User::factory()->create();
         $instructeur = creerMarinInstructeur(
@@ -375,7 +375,7 @@ it(
 );
 
 it(
-    'affiche les stagiaires inscrits uniquement sur les sessions de l instructeur',
+    'affiche les stagiaires inscrits uniquement sur les sessions du formateur',
     function (): void {
         $user = User::factory()->create();
         $instructeur = creerMarinInstructeur(
@@ -430,3 +430,86 @@ it(
             ->assertDontSee('MASQUE Paul');
     }
 );
+
+it('affiche tous les stagiaires de la session seulement a son formateur', function (): void {
+    $user = User::factory()->create();
+    $instructeur = creerMarinInstructeur($user, '007');
+    $session = creerSessionInstructeur($instructeur);
+    $autreUser = User::factory()->create();
+    $autreInstructeur = creerMarinInstructeur($autreUser, '008');
+    $autreSession = creerSessionInstructeur($autreInstructeur);
+
+    foreach (range(1, 6) as $numero) {
+        Inscription::create([
+            'session_stage_id' => $session->getKey(),
+            'candidat_nom' => 'VISIBLE' . $numero,
+            'candidat_prenom' => 'Alice',
+            'candidat_grade' => 'Quartier-maitre',
+            'candidat_unite' => 'Unite formation',
+            'nemo_recu' => true,
+        ]);
+    }
+
+    foreach (['refusee', 'annulee'] as $statut) {
+        Inscription::create([
+            'session_stage_id' => $session->getKey(),
+            'candidat_nom' => 'EXCLU' . $statut,
+            'statut' => $statut,
+        ]);
+    }
+
+    Inscription::create([
+        'session_stage_id' => $autreSession->getKey(),
+        'candidat_nom' => 'AUTRESESSION',
+        'nemo_recu' => true,
+    ]);
+
+    $url = \Modules\FPSplanificationstage\Filament\Pages\SessionInstructeurDetail::getUrl(
+        ['session' => $session->getKey()],
+        panel: 'fpsplanificationstage'
+    );
+
+    actingAs($user);
+    $response = get($url)->assertSuccessful()
+        ->assertSee('Stagiaires inscrits (6)')
+        ->assertDontSee('Description de la formation')
+        ->assertDontSee('Pré-requis')
+        ->assertDontSee("S'inscrire à cette session")
+        ->assertSee('Quartier-maitre')
+        ->assertSee('Unite formation')
+        ->assertDontSee('EXCLUrefusee')
+        ->assertDontSee('EXCLUannulee')
+        ->assertDontSee('AUTRESESSION')
+        ->assertSee(EspaceInstructeur::getUrl(panel: 'fpsplanificationstage'), false);
+
+    foreach (range(1, 6) as $numero) {
+        $response->assertSee('VISIBLE' . $numero . ' Alice');
+    }
+
+    livewire(\Modules\FPSplanificationstage\Filament\Public\Pages\SessionDetail::class, [
+        'session' => $session->getKey(),
+    ])->assertRedirect($url);
+
+    expect($url)->toContain('/espace-instructeur/sessions/');
+    livewire(SessionsInstructeurTable::class)->assertSee($url, false);
+
+    actingAs($autreUser);
+    livewire(\Modules\FPSplanificationstage\Filament\Pages\SessionInstructeurDetail::class, [
+        'session' => $session->getKey(),
+    ])->assertForbidden();
+
+    actingAs(User::factory()->create());
+    get($url)->assertDontSee('VISIBLE1');
+
+});
+
+it('indique au formateur quand la session ne comporte aucun stagiaire', function (): void {
+    $user = User::factory()->create();
+    $session = creerSessionInstructeur(creerMarinInstructeur($user, '009'));
+
+    actingAs($user);
+    get(\Modules\FPSplanificationstage\Filament\Pages\SessionInstructeurDetail::getUrl(
+        ['session' => $session->getKey()],
+        panel: 'fpsplanificationstage'
+    ))->assertSuccessful()->assertSee('Aucun stagiaire inscrit');
+});

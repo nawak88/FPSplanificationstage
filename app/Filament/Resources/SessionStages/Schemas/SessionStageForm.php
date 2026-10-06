@@ -308,9 +308,9 @@ class SessionStageForm
                             ->native(false),
                     ]),
 
-                Section::make('Instructeurs')
+                Section::make('Formateurs')
                     ->description(
-                        'Les instructeurs habilités pour le stage sont ajoutés automatiquement. Vous pouvez modifier la sélection.'
+                        'Les formateurs habilités pour le stage sont ajoutés automatiquement. Vous pouvez modifier la sélection.'
                     )
                     ->schema([
 
@@ -318,7 +318,7 @@ class SessionStageForm
                             'instructeurs'
                         )
                             ->label(
-                                'Instructeurs'
+                                'Formateurs'
                             )
                             ->relationship(
                                 name:

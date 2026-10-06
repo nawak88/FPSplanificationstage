@@ -9,6 +9,7 @@ use Modules\FPSplanificationstage\Filament\Widgets\ActiviteInstructeurStats;
 use Modules\FPSplanificationstage\Filament\Widgets\CalendrierInstructeur;
 use Modules\FPSplanificationstage\Filament\Widgets\SessionsInstructeurTable;
 use Modules\FPSplanificationstage\Services\InstructeurConnecteService;
+use Modules\FPSplanificationstage\Models\Marin;
 
 class EspaceInstructeur extends BaseDashboard
 {
@@ -19,7 +20,7 @@ class EspaceInstructeur extends BaseDashboard
         'Mon activité';
 
     protected static string|\UnitEnum|null $navigationGroup =
-        'Espace instructeur';
+        'Espace formateur';
 
     protected static string|\BackedEnum|null $navigationIcon =
         'heroicon-o-presentation-chart-line';
@@ -34,16 +35,12 @@ class EspaceInstructeur extends BaseDashboard
             return false;
         }
 
-        return app(
-            InstructeurConnecteService::class
-        )->peutAccederEspaceInstructeur(
-            $user
-        );
+        return Marin::utilisateurEstInstructeur($user);
     }
 
     public function getTitle(): string
     {
-        return 'Mon espace instructeur';
+        return 'Mon espace formateur';
     }
 
     public function getColumns(): int|array

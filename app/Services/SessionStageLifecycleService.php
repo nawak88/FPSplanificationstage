@@ -365,7 +365,7 @@ class SessionStageLifecycleService
 
                 'message' =>
                     sprintf(
-                        '%s déplacée du %s au %s. Les inscriptions, la salle et les instructeurs sont conservés.',
+                        '%s déplacée du %s au %s. Les inscriptions, la salle et les formateurs sont conservés.',
                         $session->code_session,
                         $ancienDebut->format(
                             'd/m/Y'

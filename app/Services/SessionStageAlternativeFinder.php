@@ -120,7 +120,7 @@ class SessionStageAlternativeFinder
              * nouvelle salle.
              *
              * Cela permet également de vérifier que
-             * les instructeurs sont disponibles.
+             * les formateurs sont disponibles.
              */
             $candidate = $data;
 

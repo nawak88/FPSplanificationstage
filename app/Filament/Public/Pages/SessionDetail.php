@@ -2,6 +2,7 @@
 
 namespace Modules\FPSplanificationstage\Filament\Public\Pages;
 
+use Modules\FPSplanificationstage\Filament\Pages\SessionInstructeurDetail;
 use Modules\FPSplanificationstage\Models\SessionStage;
 use Modules\FPSplanificationstage\Services\PublicSessionPageService;
 
@@ -20,5 +21,12 @@ class SessionDetail extends PublicPage
         )->detail(
             $record
         );
+
+        if ($this->pageData['stagiaires'] !== null) {
+            $this->redirect(SessionInstructeurDetail::getUrl(
+                ['session' => $record->getKey()],
+                panel: 'fpsplanificationstage'
+            ));
+        }
     }
 }

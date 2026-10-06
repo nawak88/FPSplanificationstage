@@ -43,11 +43,12 @@ class InstructeurStageImporter
         $spreadsheet,
         array &$result
     ): void {
-        $sheet = $spreadsheet->getSheetByName('Instructeurs');
+        $sheet = $spreadsheet->getSheetByName('Formateurs')
+            ?? $spreadsheet->getSheetByName('Instructeurs');
 
         if (! $sheet) {
             throw new RuntimeException(
-                'L’onglet "Instructeurs" est introuvable.'
+                'L’onglet "Formateurs" est introuvable.'
             );
         }
 
@@ -115,7 +116,7 @@ class InstructeurStageImporter
                 $result['instructeurs_inchanges']++;
             } catch (Throwable $e) {
                 $result['erreurs'][] =
-                    "Instructeurs ligne {$excelRow} : {$e->getMessage()}";
+                    "Formateurs ligne {$excelRow} : {$e->getMessage()}";
             }
         }
     }
@@ -177,7 +178,7 @@ class InstructeurStageImporter
 
                 if (! $instructeur instanceof Marin) {
                     throw new RuntimeException(
-                        'Instructeur introuvable ou ambigu.'
+                        'Formateur introuvable ou ambigu.'
                     );
                 }
 
@@ -462,6 +463,10 @@ class InstructeurStageImporter
         array $columns,
         string $header
     ): mixed {
+        if ($header === 'identifiant instructeur' && isset($columns['identifiant formateur'])) {
+            $header = 'identifiant formateur';
+        }
+
         return isset($columns[$header])
             ? ($row[$columns[$header]] ?? null)
             : null;

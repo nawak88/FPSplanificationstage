@@ -341,7 +341,7 @@ class BesoinFormationsTable
                         'Planifier ce besoin'
                     )
                     ->modalDescription(
-                        'L’application recherche un créneau compatible avec les dates demandées, la durée du stage, les salles, les instructeurs et les autres sessions. '
+                        'L’application recherche un créneau compatible avec les dates demandées, la durée du stage, les salles, les formateurs et les autres sessions. '
                         . 'L’effectif demandé ne bloque jamais l’ouverture d’une session : la session conserve la capacité maximale du stage afin que d’autres besoins puissent s’y rattacher ensuite.'
                     )
                     ->schema([
@@ -353,7 +353,7 @@ class BesoinFormationsTable
                                 'Effectif minimum non bloquant (automatique)'
                             )
                             ->helperText(
-                                'Automatique : le nombre demandé ne bloque jamais la création. Les conflits salle/instructeur restent bloquants.'
+                                'Automatique : le nombre demandé ne bloque jamais la création. Les conflits salle/formateur restent bloquants.'
                             )
                             ->default(
                                 true

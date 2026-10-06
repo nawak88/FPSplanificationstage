@@ -17,10 +17,10 @@ class IndisponibiliteInstructeurForm
         return $schema
             ->components([
 
-                Section::make('Instructeur')
+                Section::make('Formateur')
                     ->schema([
                         Select::make('instructeur_id')
-                            ->label('Instructeur')
+                            ->label('Formateur')
                             ->relationship(
                                 name: 'instructeur',
                                 titleAttribute: 'nom'

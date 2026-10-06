@@ -46,6 +46,10 @@ protected $table = 'inscriptions';
     ];
 
     protected $casts = [
+        'note_fin_stage' => 'decimal:2',
+        'stage_valide' => 'boolean',
+        'date_attribution' => 'date',
+
         'nemo_recu' =>
             'boolean',
 

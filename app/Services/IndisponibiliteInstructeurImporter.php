@@ -68,7 +68,7 @@ class IndisponibiliteInstructeurImporter
 
                 if (! $instructeur instanceof Marin) {
                     throw new RuntimeException(
-                        'Instructeur introuvable ou ambigu.'
+                        'Formateur introuvable ou ambigu.'
                     );
                 }
 
@@ -298,6 +298,10 @@ class IndisponibiliteInstructeurImporter
         array $columns,
         string $header
     ): mixed {
+        if ($header === 'identifiant instructeur' && isset($columns['identifiant formateur'])) {
+            $header = 'identifiant formateur';
+        }
+
         return isset($columns[$header])
             ? ($row[$columns[$header]] ?? null)
             : null;

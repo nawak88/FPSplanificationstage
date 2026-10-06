@@ -25,7 +25,7 @@ class BesoinFormationGroupedPlanner
      * - un besoin peut être réparti sur plusieurs sessions ;
      * - une session peut couvrir plusieurs besoins ;
      * - samedi et dimanche ne comptent pas dans la durée ;
-     * - les conflits salle / instructeurs restent contrôlés par
+     * - les conflits salle / formateurs restent contrôlés par
      *   SessionStageConflictDetector.
      */
     public function plan(
@@ -39,7 +39,7 @@ class BesoinFormationGroupedPlanner
          * l'utilisateur peut explicitement décider de programmer
          * une session en dessous du minimum.
          *
-         * Les conflits de salle / instructeur et la durée du stage
+         * Les conflits de salle / formateur et la durée du stage
          * restent, eux, bloquants.
          */
         $records =
@@ -450,7 +450,7 @@ class BesoinFormationGroupedPlanner
             );
 
         /*
-         * Tous les instructeurs actifs associés au stage
+         * Tous les formateurs actifs associés au stage
          * sont repris comme dans le moteur historique.
          */
         $instructeurIds =
@@ -473,7 +473,7 @@ class BesoinFormationGroupedPlanner
             return $this->echecGroupe(
                 $besoins,
                 sprintf(
-                    '%s : aucun instructeur actif associé.',
+                    '%s : aucun formateur actif associé.',
                     $stage
                         ->libelle_court
                 )

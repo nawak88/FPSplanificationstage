@@ -109,7 +109,7 @@ it(
 );
 
 it(
-    'ajoute un marin comme instructeur sur plusieurs stages',
+    'ajoute un marin comme formateur sur plusieurs stages',
     function (): void {
         actingAs(
             creerUtilisateurGestionnaireInstructeurs()

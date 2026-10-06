@@ -34,7 +34,7 @@ class EditBesoinFormation extends EditRecord
                     'Rechercher une planification'
                 )
                 ->modalDescription(
-                    'L’application va rechercher un créneau compatible avec le stage, les instructeurs, leurs indisponibilités, les salles et les sessions déjà planifiées.'
+                    'L’application va rechercher un créneau compatible avec le stage, les formateurs, leurs indisponibilités, les salles et les sessions déjà planifiées.'
                 )
                 ->modalSubmitActionLabel(
                     'Rechercher'

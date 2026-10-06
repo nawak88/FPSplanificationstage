@@ -29,7 +29,7 @@ it('uses RH marins for every instructor relationship', function () {
     );
 
     $stage = Stage::create([
-        'libelle_court' => 'Stage avec instructeur RH',
+        'libelle_court' => 'Stage avec formateur RH',
         'actif' => true,
     ]);
 
@@ -167,7 +167,7 @@ it('imports instructors as RH marins and associates them with stages', function 
     $spreadsheet = new Spreadsheet();
 
     $spreadsheet->getActiveSheet()
-        ->setTitle('Instructeurs')
+        ->setTitle('Formateurs')
         ->fromArray([
             ['Nom', 'Prénom', 'Identifiant interne', 'Email'],
             ['BERNARD', 'Émilie', 'MAT-IMPORT-001', 'emilie.bernard@example.test'],
@@ -176,7 +176,7 @@ it('imports instructors as RH marins and associates them with stages', function 
     $spreadsheet->createSheet()
         ->setTitle('Stages délivrés')
         ->fromArray([
-            ['Identifiant instructeur', 'Code stage', 'Rôle', 'Actif'],
+            ['Identifiant formateur', 'Code stage', 'Rôle', 'Actif'],
             ['MAT-IMPORT-001', 'STG-IMPORT-MARIN', 'Principal', 'Oui'],
         ]);
 

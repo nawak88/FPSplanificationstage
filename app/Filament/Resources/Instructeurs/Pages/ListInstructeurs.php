@@ -28,7 +28,7 @@ class ListInstructeurs extends ListRecords
     {
         return [
             Action::make('ajouterInstructeur')
-                ->label('Ajouter un instructeur')
+                ->label('Ajouter un formateur')
                 ->icon('heroicon-o-user-plus')
                 ->color('success')
                 ->authorize(
@@ -37,7 +37,7 @@ class ListInstructeurs extends ListRecords
                             'fpsplanificationstage::gerer_le_module'
                         ) ?? false
                 )
-                ->modalHeading('Ajouter un instructeur manuellement')
+                ->modalHeading('Ajouter un formateur manuellement')
                 ->modalDescription(
                     'Sélectionnez un marin existant ou créez sa fiche RH, puis choisissez ses stages.'
                 )
@@ -45,7 +45,7 @@ class ListInstructeurs extends ListRecords
                 ->schema([
                     Toggle::make('nouveau_marin')
                         ->label('Marin absent de RH')
-                        ->helperText('Une fiche marin sera créée dans RH lors de l’ajout de l’instructeur.')
+                        ->helperText('Une fiche marin sera créée dans RH lors de l’ajout de l’formateur.')
                         ->default(false)
                         ->live(),
                     Select::make('marin_id')
@@ -152,14 +152,14 @@ class ListInstructeurs extends ListRecords
                     $this->resetTable();
 
                     Notification::make()
-                        ->title('Instructeur ajouté')
+                        ->title('Formateur ajouté')
                         ->body(
                             trim(
                                 mb_strtoupper($instructeur->nom)
                                 . ' '
                                 . $instructeur->prenom
                             )
-                            . ' est maintenant disponible dans l’onglet Instructeurs.'
+                            . ' est maintenant disponible dans l’onglet Formateurs.'
                         )
                         ->success()
                         ->send();
@@ -168,9 +168,9 @@ class ListInstructeurs extends ListRecords
                 ->label('Importer Excel')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('gray')
-                ->modalHeading('Importer les instructeurs et leurs stages')
+                ->modalHeading('Importer les formateurs et leurs stages')
                 ->modalDescription(
-                    'Le fichier doit contenir les onglets "Instructeurs" et "Stages délivrés".'
+                    'Le fichier doit contenir les onglets "Formateurs" et "Stages délivrés".'
                 )
                 ->modalSubmitActionLabel('Importer')
                 ->schema([
@@ -217,7 +217,7 @@ class ListInstructeurs extends ListRecords
                         $this->resetTable();
 
                         $resume =
-                            "Instructeurs : " .
+                            "Formateurs : " .
                             "{$result['instructeurs_crees']} créés • " .
                             "{$result['instructeurs_mis_a_jour']} mis à jour • " .
                             "{$result['instructeurs_inchanges']} inchangés" .

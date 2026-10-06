@@ -99,7 +99,7 @@ class EditStage extends EditRecord
 
                             /*
                              * On détache explicitement les
-                             * instructeurs des sessions si la
+                             * formateurs des sessions si la
                              * table pivot existe.
                              */
                             if (

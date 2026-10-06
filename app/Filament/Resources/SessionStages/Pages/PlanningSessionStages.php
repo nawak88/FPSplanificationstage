@@ -73,8 +73,8 @@ class PlanningSessionStages extends Page
                             ->searchable()
                             ->live(),
                         Select::make('instructeurFilter')
-                            ->label('Instructeur')
-                            ->placeholder('Tous les instructeurs')
+                            ->label('Formateur')
+                            ->placeholder('Tous les formateurs')
                             ->options(fn (): array => $this->instructorOptions())
                             ->searchable()
                             ->live(),

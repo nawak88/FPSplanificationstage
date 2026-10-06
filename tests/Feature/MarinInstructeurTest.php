@@ -21,7 +21,7 @@ it('utilise la même table que le modèle RH et reconnaît l utilisateur désign
         ->and($marin->estInstructeur())->toBeFalse()
         ->and(Marin::utilisateurCourantEstInstructeur())->toBeFalse();
 
-    $stage = Stage::create(['libelle_court' => 'Stage instructeur', 'actif' => true]);
+    $stage = Stage::create(['libelle_court' => 'Stage formateur', 'actif' => true]);
     $stage->instructeurs()->attach($marin);
     $this->actingAs($user);
 
